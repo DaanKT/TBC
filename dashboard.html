@@ -42,6 +42,8 @@
   button.danger { color: #dc2626; border-color: #fecaca; }
   button.danger:hover { background: #fef2f2; }
   button.small { font-size: 12px; padding: 5px 10px; }
+  button.amber { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+  button.amber:hover { background: #fef3c7; }
   .list-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .section-header { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 18px 8px; background: #f8f9fb; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
   .klant-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; user-select: none; }
@@ -93,20 +95,21 @@
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
   .tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; width: fit-content; }
-  .tab { font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: calc(var(--radius) - 2px); border: none; background: none; color: var(--muted); cursor: pointer; }
+  .tab { font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: calc(var(--radius) - 2px); border: none; background: none; color: var(--muted); cursor: pointer; transition: background 0.12s; }
   .tab.active { background: var(--navy); color: #fff; }
+  .user-table { width: 100%; border-collapse: collapse; }
+  .user-table th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+  .user-table td { font-size: 13px; padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .user-table tr:last-child td { border-bottom: none; }
+  .user-actions { display: flex; gap: 6px; flex-wrap: wrap; }
   .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 6px; }
-  .toast { background: var(--navy); color: #fff; font-size: 13px; padding: 10px 16px; border-radius: var(--radius-sm); animation: tin .2s ease; }
+  .toast { background: var(--navy); color: #fff; font-size: 13px; padding: 10px 16px; border-radius: var(--radius-sm); animation: tin .2s ease; max-width: 340px; }
   .toast.err { background: #dc2626; }
   .toast.ok { background: #16a34a; }
   @keyframes tin { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
   .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
   .loader.dark { border-color: rgba(0,0,0,0.15); border-top-color: var(--navy); }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .user-table { width: 100%; border-collapse: collapse; }
-  .user-table th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border); }
-  .user-table td { font-size: 13px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-  .user-table tr:last-child td { border-bottom: none; }
   @media (max-width: 520px) { .stats-row { grid-template-columns: 1fr 1fr; } .row2 { grid-template-columns: 1fr; } .tabs { width: 100%; } }
 </style>
 </head>
@@ -121,7 +124,6 @@
 </header>
 
 <main>
-  <!-- Tabs (admin only) -->
   <div class="tabs" id="tabs" style="display:none">
     <button class="tab active" onclick="switchTab('klachten')">Klachten</button>
     <button class="tab" onclick="switchTab('gebruikers')">Gebruikers</button>
@@ -130,22 +132,10 @@
   <!-- Klachten view -->
   <div id="view-klachten">
     <div class="stats-row">
-      <div class="stat active-filter" id="stat-all" onclick="setFilter('all')">
-        <div class="stat-num n-total" id="s-total">—</div>
-        <div class="stat-label">Totaal</div>
-      </div>
-      <div class="stat" id="stat-open" onclick="setFilter('open')">
-        <div class="stat-num n-open" id="s-open">—</div>
-        <div class="stat-label">Open</div>
-      </div>
-      <div class="stat" id="stat-behandeling" onclick="setFilter('behandeling')">
-        <div class="stat-num n-beh" id="s-behandeling">—</div>
-        <div class="stat-label">In behandeling</div>
-      </div>
-      <div class="stat" id="stat-opgelost" onclick="setFilter('opgelost')">
-        <div class="stat-num n-opl" id="s-opgelost">—</div>
-        <div class="stat-label">Opgelost</div>
-      </div>
+      <div class="stat active-filter" id="stat-all" onclick="setFilter('all')"><div class="stat-num n-total" id="s-total">—</div><div class="stat-label">Totaal</div></div>
+      <div class="stat" id="stat-open" onclick="setFilter('open')"><div class="stat-num n-open" id="s-open">—</div><div class="stat-label">Open</div></div>
+      <div class="stat" id="stat-behandeling" onclick="setFilter('behandeling')"><div class="stat-num n-beh" id="s-behandeling">—</div><div class="stat-label">In behandeling</div></div>
+      <div class="stat" id="stat-opgelost" onclick="setFilter('opgelost')"><div class="stat-num n-opl" id="s-opgelost">—</div><div class="stat-label">Opgelost</div></div>
     </div>
     <div class="toolbar">
       <span class="toolbar-left" id="toolbar-label">Klachten</span>
@@ -154,12 +144,10 @@
         <button class="teal" onclick="openKlachtModal()">+ Nieuwe klacht</button>
       </div>
     </div>
-    <div class="list-card" id="list-card">
-      <div class="empty-state"><span class="loader dark"></span><br><br>Laden...</div>
-    </div>
+    <div class="list-card" id="list-card"><div class="empty-state"><span class="loader dark"></span><br><br>Laden...</div></div>
   </div>
 
-  <!-- Gebruikers view (admin only) -->
+  <!-- Gebruikers view -->
   <div id="view-gebruikers" style="display:none">
     <div class="toolbar">
       <span class="toolbar-left">Gebruikers</span>
@@ -168,9 +156,9 @@
       </div>
     </div>
     <div class="list-card">
-      <table class="user-table" id="user-table">
-        <thead><tr><th>Naam</th><th>E-mail</th><th>Rol</th><th>Klachten</th></tr></thead>
-        <tbody id="user-tbody"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">Laden...</td></tr></tbody>
+      <table class="user-table">
+        <thead><tr><th>Naam</th><th>E-mail</th><th>Rol</th><th>Klachten</th><th>Acties</th></tr></thead>
+        <tbody id="user-tbody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem"><span class="loader dark"></span></td></tr></tbody>
       </table>
     </div>
   </div>
@@ -187,7 +175,7 @@
     </div>
     <div class="field"><label>Samenvatting *</label><textarea id="f-samen" placeholder="Beschrijf de klacht concreet..."></textarea></div>
     <div class="field"><label>Status</label>
-      <select id="f-status" style="width:100%;padding:9px 12px;font-size:14px;" onchange="toggleOplossing()">
+      <select id="f-status" style="width:100%;padding:9px 12px;font-size:14px;" onchange="toggleOplF()">
         <option value="open">Open</option>
         <option value="behandeling">In behandeling</option>
         <option value="wacht">Wacht op klant</option>
@@ -215,12 +203,12 @@
   </div>
 </div>
 
-<!-- Gebruiker modal -->
+<!-- Nieuwe gebruiker modal -->
 <div class="overlay" id="user-overlay" onclick="closeOvl('user-overlay',event)">
   <div class="modal">
     <div class="modal-title">Nieuwe gebruiker aanmaken</div>
-    <div class="modal-sub">De gebruiker ontvangt geen automatische e-mail. Deel het wachtwoord zelf.</div>
-    <div class="field"><label>Naam</label><input type="text" id="u-naam" placeholder="Volledige naam" /></div>
+    <div class="modal-sub">De gebruiker kan direct inloggen. Deel het wachtwoord zelf.</div>
+    <div class="field"><label>Naam *</label><input type="text" id="u-naam" placeholder="Volledige naam" /></div>
     <div class="field"><label>E-mailadres *</label><input type="email" id="u-email" placeholder="naam@thebrandingclub.com" /></div>
     <div class="field"><label>Wachtwoord *</label><input type="password" id="u-pass" placeholder="minimaal 6 tekens" /></div>
     <div class="modal-footer">
@@ -230,17 +218,29 @@
   </div>
 </div>
 
+<!-- Wachtwoord resetten modal -->
+<div class="overlay" id="reset-overlay" onclick="closeOvl('reset-overlay',event)">
+  <div class="modal">
+    <div class="modal-title" id="reset-title">Wachtwoord resetten</div>
+    <div class="modal-sub" id="reset-sub">Stel een nieuw wachtwoord in voor deze gebruiker.</div>
+    <div class="field"><label>Nieuw wachtwoord *</label><input type="password" id="r-pass" placeholder="minimaal 6 tekens" /></div>
+    <div class="field"><label>Bevestig wachtwoord *</label><input type="password" id="r-pass2" placeholder="herhaal wachtwoord" /></div>
+    <div class="modal-footer">
+      <button onclick="closeOvl('reset-overlay')">Annuleren</button>
+      <button class="teal" id="btn-reset-save" onclick="saveReset()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-wrap" id="toasts"></div>
 
 <script>
 const SB = 'https://bstpobqvodljhpjzgnkp.supabase.co';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
-
-// Service role key needed for admin user creation — stored separately
-const SVC = '';
+const SVC = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDUzMTI4MCwiZXhwIjoyMDk2MTA3MjgwfQ.2Nrgk7-TxZ-gIAFYhjcfNTFdm6g-6HaGIu3QGCEckPs';
 
 let session=null, profiel=null, allKlachten=[], allNotities=[], allProfielen=[];
-let openKlant=null, activeFilter='all', pendingOpl=null, activeTab='klachten';
+let openKlant=null, activeFilter='all', pendingOpl=null, activeTab='klachten', resetUserId=null;
 
 const SM = {
   open:{label:'Open',cls:'b-open'},
@@ -249,39 +249,52 @@ const SM = {
   opgelost:{label:'Opgelost',cls:'b-opgelost'}
 };
 
-function hdr(extra={}) {
-  return {'apikey':KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json','Prefer':'return=representation',...extra};
+function hdr(svc=false) {
+  const token = svc ? SVC : session.access_token;
+  return {'apikey':KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=representation'};
 }
 
-async function api(method, path, body) {
-  const res = await fetch(SB+path, {method, headers:hdr(), body:body?JSON.stringify(body):undefined});
+async function api(method, path, body, svc=false) {
+  const res = await fetch(SB+path, {method, headers:hdr(svc), body:body?JSON.stringify(body):undefined});
   const t = await res.text();
   if(!res.ok) throw new Error(t);
   return t?JSON.parse(t):null;
 }
 
-function toast(msg,type='') {
+async function authApi(method, path, body, svc=false) {
+  const token = svc ? SVC : session.access_token;
+  const res = await fetch(SB+path, {
+    method,
+    headers:{'apikey':KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:body?JSON.stringify(body):undefined
+  });
+  const t = await res.text();
+  if(!res.ok) throw new Error(t);
+  return t?JSON.parse(t):null;
+}
+
+function toast(msg, type='') {
   const el=document.createElement('div');
   el.className='toast'+(type?' '+type:'');
   el.textContent=msg;
   document.getElementById('toasts').appendChild(el);
-  setTimeout(()=>el.remove(),3200);
+  setTimeout(()=>el.remove(),3500);
 }
 
 function logout() { localStorage.removeItem('tbc_session'); location.href='login.html'; }
 
-function closeOvl(id,e) {
+function closeOvl(id, e) {
   if(!e||e.target.classList.contains('overlay')) document.getElementById(id).classList.remove('open');
 }
 
-function toggleOplossing() {
+function toggleOplF() {
   document.getElementById('f-opl-wrap').style.display = document.getElementById('f-status').value==='opgelost'?'block':'none';
 }
 
 function switchTab(tab) {
   activeTab=tab;
-  document.getElementById('view-klachten').style.display = tab==='klachten'?'block':'none';
-  document.getElementById('view-gebruikers').style.display = tab==='gebruikers'?'block':'none';
+  document.getElementById('view-klachten').style.display=tab==='klachten'?'block':'none';
+  document.getElementById('view-gebruikers').style.display=tab==='gebruikers'?'block':'none';
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='klachten'?0:1)));
   if(tab==='gebruikers') renderUsers();
 }
@@ -292,11 +305,11 @@ async function init() {
   try{session=JSON.parse(raw);}catch(e){location.href='login.html';return;}
   try {
     const p=await api('GET','/rest/v1/profielen?id=eq.'+session.user.id);
-    if(!p||!p.length) throw new Error('Geen profiel');
+    if(!p||!p.length) throw new Error('geen profiel');
     profiel=p[0];
     const chip=document.getElementById('user-chip');
     chip.innerHTML=(profiel.naam||profiel.email)+(profiel.rol==='admin'?'<span class="admin-badge">Admin</span>':'');
-    if(profiel.rol==='admin') {
+    if(profiel.rol==='admin'){
       document.getElementById('tabs').style.display='flex';
       document.getElementById('btn-export').style.display='inline-flex';
     }
@@ -314,7 +327,7 @@ async function loadAll() {
     :'/rest/v1/klachten?user_id=eq.'+profiel.id+'&order=aangemaakt_op.asc';
   allKlachten=await api('GET',kUrl)||[];
   const ids=allKlachten.map(k=>k.id);
-  if(ids.length) {
+  if(ids.length){
     allNotities=await api('GET','/rest/v1/notities?klacht_id=in.('+ids.join(',')+')&order=aangemaakt_op.asc&select=*,profielen(naam,email)')||[];
   } else { allNotities=[]; }
   if(isAdmin) allProfielen=await api('GET','/rest/v1/profielen')||[];
@@ -355,8 +368,7 @@ function render() {
   const items=filtered();
   const isAdmin=profiel.rol==='admin';
   if(!items.length){c.innerHTML='<div class="empty-state">Geen klachten gevonden.</div>';return;}
-
-  if(isAdmin) {
+  if(isAdmin){
     const perUser={};
     items.forEach(k=>{
       const uid=k.user_id||'?';
@@ -405,7 +417,6 @@ function klachtCard(k,klant) {
       <div class="notitie-meta">${n.profielen?(n.profielen.naam||n.profielen.email):''} &middot; ${fmt(n.aangemaakt_op)}</div>
     </div></div>`).join('')
     :'<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Nog geen notities.</div>';
-
   const statusCtrl=canEdit
     ?`<select onchange="statusChg(${k.id},this.value,'${esc(klant)}')">
         <option value="open"${k.status==='open'?' selected':''}>Open</option>
@@ -414,7 +425,6 @@ function klachtCard(k,klant) {
         <option value="opgelost"${k.status==='opgelost'?' selected':''}>Opgelost</option>
       </select>`
     :`<span class="badge ${SM[k.status].cls}">${SM[k.status].label}</span>`;
-
   return `<div class="klacht-card" id="kc-${k.id}">
     <div class="kc-meta">
       <span class="badge ${SM[k.status].cls}">${SM[k.status].label}</span>
@@ -438,9 +448,9 @@ function klachtCard(k,klant) {
   </div>`;
 }
 
-function tog(klant) { openKlant=openKlant===klant?null:klant; render(); }
+function tog(klant){openKlant=openKlant===klant?null:klant;render();}
 
-function statusChg(id,status,klant) {
+function statusChg(id,status,klant){
   if(status==='opgelost'){
     pendingOpl={id,klant};
     document.getElementById('opl-tekst').value='';
@@ -449,49 +459,49 @@ function statusChg(id,status,klant) {
   } else { updStatus(id,status,null,klant); }
 }
 
-async function saveOplossing() {
+async function saveOplossing(){
   const tekst=document.getElementById('opl-tekst').value.trim();
   if(!tekst){toast('Vul een oplossing in.');return;}
   const btn=document.getElementById('btn-opl-save');
-  btn.disabled=true; btn.innerHTML='<span class="loader"></span>';
-  try { await updStatus(pendingOpl.id,'opgelost',tekst,pendingOpl.klant); closeOvl('opl-overlay'); }
-  finally { btn.disabled=false; btn.innerHTML='Opslaan als opgelost'; }
+  btn.disabled=true;btn.innerHTML='<span class="loader"></span>';
+  try{await updStatus(pendingOpl.id,'opgelost',tekst,pendingOpl.klant);closeOvl('opl-overlay');}
+  finally{btn.disabled=false;btn.innerHTML='Opslaan als opgelost';}
 }
 
-async function updStatus(id,status,opl,klant) {
-  try {
+async function updStatus(id,status,opl,klant){
+  try{
     const body={status,bijgewerkt_op:new Date().toISOString()};
-    if(opl) body.oplossing=opl;
+    if(opl)body.oplossing=opl;
     await api('PATCH','/rest/v1/klachten?id=eq.'+id,body);
     const k=allKlachten.find(x=>x.id===id);
     if(k){k.status=status;if(opl)k.oplossing=opl;}
-    openKlant=klant; render(); toast('Status bijgewerkt.','ok');
-  } catch(e){toast('Fout: '+e.message,'err');}
+    openKlant=klant;render();toast('Status bijgewerkt.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}
 }
 
-async function addNot(klachtId,klant) {
+async function addNot(klachtId,klant){
   const inp=document.getElementById('ni-'+klachtId);
-  const tekst=inp.value.trim(); if(!tekst) return;
+  const tekst=inp.value.trim();if(!tekst)return;
   inp.value='';
-  try {
+  try{
     const res=await api('POST','/rest/v1/notities',{klacht_id:klachtId,user_id:profiel.id,tekst});
     if(res&&res[0]){res[0].profielen={naam:profiel.naam,email:profiel.email};allNotities.push(res[0]);}
-    openKlant=klant; render(); toast('Notitie toegevoegd.','ok');
-  } catch(e){toast('Fout: '+e.message,'err');}
+    openKlant=klant;render();toast('Notitie toegevoegd.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}
 }
 
-async function delKlacht(id,klant) {
-  if(!confirm('Klacht verwijderen?')) return;
-  try {
+async function delKlacht(id,klant){
+  if(!confirm('Klacht verwijderen?'))return;
+  try{
     await api('DELETE','/rest/v1/klachten?id=eq.'+id);
     allKlachten=allKlachten.filter(k=>k.id!==id);
     allNotities=allNotities.filter(n=>n.klacht_id!==id);
     openKlant=allKlachten.some(k=>k.klant===klant)?klant:null;
-    render(); toast('Klacht verwijderd.');
-  } catch(e){toast('Fout: '+e.message,'err');}
+    render();toast('Klacht verwijderd.');
+  }catch(e){toast('Fout: '+e.message,'err');}
 }
 
-function openKlachtModal() {
+function openKlachtModal(){
   ['f-klant','f-deal','f-samen','f-oplossing'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-status').value='open';
   document.getElementById('f-opl-wrap').style.display='none';
@@ -499,7 +509,7 @@ function openKlachtModal() {
   setTimeout(()=>document.getElementById('f-klant').focus(),50);
 }
 
-async function saveKlacht() {
+async function saveKlacht(){
   const klant=document.getElementById('f-klant').value.trim();
   const samen=document.getElementById('f-samen').value.trim();
   const deal=document.getElementById('f-deal').value.trim();
@@ -508,64 +518,87 @@ async function saveKlacht() {
   if(!klant||!samen){toast('Vul klantnaam en samenvatting in.');return;}
   if(status==='opgelost'&&!opl){toast('Vul een oplossing in.');return;}
   const btn=document.getElementById('btn-klacht-save');
-  btn.disabled=true; btn.innerHTML='<span class="loader"></span>';
-  try {
+  btn.disabled=true;btn.innerHTML='<span class="loader"></span>';
+  try{
     const body={klant,samenvatting:samen,deal:deal||null,status,user_id:profiel.id};
-    if(opl) body.oplossing=opl;
+    if(opl)body.oplossing=opl;
     const res=await api('POST','/rest/v1/klachten?select=*,profielen(naam,email)',body);
-    if(res&&res[0]) allKlachten.push(res[0]);
-    openKlant=klant; closeOvl('klacht-overlay'); render(); toast('Klacht opgeslagen.','ok');
-  } catch(e){toast('Fout: '+e.message,'err');}
+    if(res&&res[0])allKlachten.push(res[0]);
+    openKlant=klant;closeOvl('klacht-overlay');render();toast('Klacht opgeslagen.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}
   finally{btn.disabled=false;btn.innerHTML='Opslaan';}
 }
 
-function openUserModal() {
+function openUserModal(){
   ['u-naam','u-email','u-pass'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('user-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('u-naam').focus(),50);
 }
 
-async function saveUser() {
+async function saveUser(){
   const naam=document.getElementById('u-naam').value.trim();
   const email=document.getElementById('u-email').value.trim();
   const pass=document.getElementById('u-pass').value;
-  if(!email||!pass){toast('Vul e-mail en wachtwoord in.');return;}
+  if(!naam||!email||!pass){toast('Vul naam, e-mail en wachtwoord in.');return;}
   if(pass.length<6){toast('Wachtwoord minimaal 6 tekens.');return;}
   const btn=document.getElementById('btn-user-save');
-  btn.disabled=true; btn.innerHTML='<span class="loader"></span>';
-  try {
-    // Signup via Supabase Auth (anon key — werkt met email confirm uitgeschakeld)
-    const res=await fetch(SB+'/auth/v1/admin/users',{
-      method:'POST',
-      headers:{'apikey':KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json'},
-      body:JSON.stringify({email,password:pass,email_confirm:true,user_metadata:{naam}})
-    });
-    const data=await res.json();
-    if(!res.ok) throw new Error(data.msg||data.message||JSON.stringify(data));
+  btn.disabled=true;btn.innerHTML='<span class="loader"></span>';
+  try{
+    // Gebruiker aanmaken via service role
+    const res=await authApi('POST','/auth/v1/admin/users',{
+      email,password:pass,email_confirm:true,user_metadata:{naam}
+    },true);
     // Profiel aanmaken
-    await api('POST','/rest/v1/profielen',{id:data.id,email,naam:naam||null,rol:'gebruiker'});
-    allProfielen.push({id:data.id,email,naam,rol:'gebruiker'});
-    closeOvl('user-overlay'); renderUsers();
-    toast('Gebruiker '+email+' aangemaakt.','ok');
-  } catch(e){
-    // Fallback melding
-    toast('Aanmaken via dashboard lukt alleen met service role key. Maak de gebruiker aan via Supabase → Authentication → Users.','err');
-  }
-  finally{btn.disabled=false;btn.innerHTML='Aanmaken';}
+    await api('POST','/rest/v1/profielen',{id:res.id,email,naam,rol:'gebruiker'},true);
+    allProfielen.push({id:res.id,email,naam,rol:'gebruiker'});
+    closeOvl('user-overlay');
+    renderUsers();
+    toast(naam+' is aangemaakt en kan direct inloggen.','ok');
+  }catch(e){
+    toast('Fout bij aanmaken: '+e.message,'err');
+  }finally{btn.disabled=false;btn.innerHTML='Aanmaken';}
 }
 
-function renderUsers() {
+function openResetModal(userId, naam){
+  resetUserId=userId;
+  document.getElementById('reset-title').textContent='Wachtwoord resetten — '+naam;
+  document.getElementById('r-pass').value='';
+  document.getElementById('r-pass2').value='';
+  document.getElementById('reset-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('r-pass').focus(),50);
+}
+
+async function saveReset(){
+  const pass=document.getElementById('r-pass').value;
+  const pass2=document.getElementById('r-pass2').value;
+  if(!pass||pass.length<6){toast('Wachtwoord minimaal 6 tekens.');return;}
+  if(pass!==pass2){toast('Wachtwoorden komen niet overeen.');return;}
+  const btn=document.getElementById('btn-reset-save');
+  btn.disabled=true;btn.innerHTML='<span class="loader"></span>';
+  try{
+    await authApi('PUT','/auth/v1/admin/users/'+resetUserId,{password:pass},true);
+    closeOvl('reset-overlay');
+    toast('Wachtwoord succesvol gewijzigd.','ok');
+  }catch(e){
+    toast('Fout bij resetten: '+e.message,'err');
+  }finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+}
+
+function renderUsers(){
   const tbody=document.getElementById('user-tbody');
-  if(!allProfielen.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">Geen gebruikers gevonden.</td></tr>';return;}
+  if(!allProfielen.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">Geen gebruikers.</td></tr>';return;}
   tbody.innerHTML=allProfielen.map(u=>`<tr>
-    <td>${u.naam||'—'}</td>
-    <td>${u.email}</td>
+    <td style="font-weight:500">${u.naam||'—'}</td>
+    <td style="color:var(--muted)">${u.email}</td>
     <td><span class="badge ${u.rol==='admin'?'b-behandeling':'b-wacht'}">${u.rol}</span></td>
     <td>${allKlachten.filter(k=>k.user_id===u.id).length}</td>
+    <td><div class="user-actions">
+      <button class="small amber" onclick="openResetModal('${u.id}','${esc(u.naam||u.email)}')">&#128274; Reset wachtwoord</button>
+    </div></td>
   </tr>`).join('');
 }
 
-function mailOpen() {
+function mailOpen(){
   const open=allKlachten.filter(k=>k.status!=='opgelost');
   if(!open.length){toast('Geen open klachten.');return;}
   const g=byKlant(open);
@@ -573,7 +606,7 @@ function mailOpen() {
   let n=1;
   Object.keys(g).forEach(kl=>g[kl].forEach(k=>{
     lines.push(n+++'. '+kl);
-    if(k.deal) lines.push('   Deal: '+k.deal);
+    if(k.deal)lines.push('   Deal: '+k.deal);
     lines.push('   Status: '+SM[k.status].label);
     lines.push('   Klacht: '+k.samenvatting);
     lines.push('');
@@ -582,13 +615,13 @@ function mailOpen() {
   location.href='mailto:matthijs@thebranding.club?subject='+encodeURIComponent('Open klachten — '+new Date().toLocaleDateString('nl-NL'))+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
-function mailKlant(klant) {
+function mailKlant(klant){
   const items=allKlachten.filter(k=>k.klant===klant);
   const lines=['Hoi Matthijs,','','Klachten voor '+klant+':',''];
   items.forEach((k,i)=>{
     lines.push((i+1)+'. '+(k.deal?k.deal+' — ':'')+SM[k.status].label);
     lines.push('   '+k.samenvatting);
-    if(k.oplossing) lines.push('   Oplossing: '+k.oplossing);
+    if(k.oplossing)lines.push('   Oplossing: '+k.oplossing);
     lines.push('');
   });
   lines.push('Met vriendelijke groet,','Daniël');

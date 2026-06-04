@@ -103,6 +103,12 @@ textarea{resize:vertical;min-height:80px}
 .tag{font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid var(--border);background:var(--card);cursor:pointer;transition:background .12s}
 .tag.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 </style>
+
+<style>
+.bottom-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; padding: 0 4px; gap: 0; }
+.bottom-nav::-webkit-scrollbar { display: none; }
+.bn-item { min-width: 64px; flex-shrink: 0; }
+</style>
 </head>
 <body>
 <div class="topbar">
@@ -114,7 +120,8 @@ textarea{resize:vertical;min-height:80px}
   <button class="bn-item " onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
   <button class="bn-item " onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span></button>
   <button class="bn-item active" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
-  <button class="bn-item " onclick="location.href='levertijden.html'"><span class="ic">📦</span><span>Lever</span></button>
+  <button class="bn-item " onclick="location.href='levertijden.html'"><span class="ic">📦</span><span>Levertijd</span></button>
+  <button class="bn-item " onclick="location.href='klachten.html'"><span class="ic">⚠️</span><span>Klachten</span></button>
   <button class="bn-item " onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
 </nav>
 <div class="tw" id="tw"></div>

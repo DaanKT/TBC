@@ -307,7 +307,9 @@ function renderDagrapporten(){
 
   if(isA){
     h+=`<div class="section-label">Status vandaag per medewerker</div>`;
-    profielen.filter(u=>u.rol!=='admin').forEach(u=>{
+    // Show all users including admin (as "jij")
+  const allUsers=[{...me, naam:(me.naam||me.email)+' (jij)'},...profielen.filter(u=>u.id!==me.id&&u.rol!=='admin')];
+  allUsers.forEach(u=>{
       const d=dagrapporten.find(x=>x.user_id===u.id&&x.datum===today);
       const reg=regios.find(r=>r.id===u.regio_id);
       const uDags=dagrapporten.filter(x=>x.user_id===u.id&&x.datum.startsWith(nowM()));

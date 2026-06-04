@@ -250,9 +250,8 @@ async function init(){
 
 async function loadData(){
   const isA=isAdmin(me);
-  const lu=isA
-    ?'/rest/v1/levertijden?order=aangemaakt_op.desc&select=*,profielen(naam,email)'
-    :'/rest/v1/levertijden?user_id=eq.'+me.id+'&order=aangemaakt_op.desc';
+  // Admin gets all, user gets own — both via same query since RLS handles it
+  const lu='/rest/v1/levertijden?order=aangemaakt_op.desc&select=*,profielen(naam,email)';
   levertijden=await api('GET',lu)||[];
   if(isA){
     profielen=await api('GET','/rest/v1/profielen')||[];
@@ -297,7 +296,8 @@ function render(){
   // Admin user filter
   if(isA){
     h+=`<div class="tag-row">
-      <span class="tag${!filterUser?' active':''}" onclick="filterUser=null;render()">Iedereen</span>`;
+      <span class="tag${!filterUser?' active':''}" onclick="filterUser=null;render()">Iedereen</span>
+      <span class="tag${filterUser===me.id?' active':''}" onclick="filterUser='${me.id}';render()">Mijn verzoeken</span>`;
     profielen.filter(u=>u.rol!=='admin').forEach(u=>{
       h+=`<span class="tag${filterUser===u.id?' active':''}" onclick="filterUser='${u.id}';render()">${u.naam||u.email}</span>`;
     });

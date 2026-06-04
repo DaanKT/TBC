@@ -244,7 +244,7 @@ function render(){
   const g={};filt.forEach(k=>{if(!g[k.klant])g[k.klant]=[];g[k.klant].push(k);});
   if(!Object.keys(g).length){h+=`<div class="empty">Geen klachten gevonden.</div>`;}
   else if(isA){
-    const pu={};filt.forEach(k=>{const uid=k.user_id||'?';const n=k.profielen?(k.profielen.naam||k.profielen.email):'?';if(!pu[uid])pu[uid]={n,items:[]};pu[uid].items.push(k);});
+    const pu={};filt.forEach(k=>{const uid=k.user_id||'?';const n=uid===me.id?(me.naam||me.email)+' (jij)':(k.profielen?(k.profielen.naam||k.profielen.email):'?');if(!pu[uid])pu[uid]={n,items:[]};pu[uid].items.push(k);});
     Object.keys(pu).forEach(uid=>{
       const u=pu[uid];const ug={};u.items.forEach(k=>{if(!ug[k.klant])ug[k.klant]=[];ug[k.klant].push(k);});
       h+=`<div class="section-label">${u.n}</div>`;

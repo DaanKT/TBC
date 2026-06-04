@@ -277,8 +277,9 @@ function render(){
 
   // User switcher for admin
   if(isA){
-    h+=`<div class="tag-row">`;
-    h+=`<span class="tag${!viewUserId?' active':''}" onclick="viewUserId=null;render()">Mijn taken</span>`;
+    h+=`<div class="tag-row">
+      <span class="tag${viewUserId===me.id?' active':''}" onclick="viewUserId=me.id;render()">Mijn taken</span>
+      <span class="tag${!viewUserId?' active':''}" onclick="viewUserId=null;render()">Iedereen</span>`;
     profielen.filter(u=>u.rol!=='admin').forEach(u=>{
       h+=`<span class="tag${viewUserId===u.id?' active':''}" onclick="viewUserId='${u.id}';render()">${u.naam||u.email}</span>`;
     });

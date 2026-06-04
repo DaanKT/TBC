@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>Dashboard — TBC</title>
+<title>Taken — TBC</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="manifest" href="manifest.json"/>
 <style>
@@ -111,13 +111,26 @@ textarea{resize:vertical;min-height:80px}
 </div>
 <div class="content" id="content"><div class="empty"><span class="ld dk"></span><br><br>Laden...</div></div>
 <nav class="bottom-nav">
-  <button class="bn-item active" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
-  <button class="bn-item" onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span><span class="bn-badge" id="bn-dag" style="display:none">!</span></button>
-  <button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span><span class="bn-badge" id="bn-taken" style="display:none">!</span></button>
+  <button class="bn-item" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
+  <button class="bn-item" onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span></button>
+  <button class="bn-item active" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
   <button class="bn-item" onclick="location.href='klachten.html'"><span class="ic">⚠️</span><span>Klachten</span></button>
   <button class="bn-item" onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
 </nav>
 <div class="tw" id="tw"></div>
+
+<div class="overlay" id="ov-taak" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal"><div class="modal-handle"></div>
+<div class="mt">Taak</div>
+<div class="field"><label>Omschrijving *</label><textarea id="tk-t" placeholder="Wat moet er gebeuren?" style="min-height:60px"></textarea></div>
+<div class="r2">
+  <div class="field"><label>Categorie</label><select id="tk-c"><option value="algemeen">Algemeen</option><option value="klant">Klant</option><option value="intern">Intern</option><option value="prospectie">Prospectie</option></select></div>
+  <div class="field"><label>Prioriteit</label><select id="tk-p"><option value="1">🔴 Hoog</option><option value="2" selected>🟡 Normaal</option><option value="3">🟢 Laag</option></select></div>
+</div>
+<div class="field"><label>Datum</label><input type="date" id="tk-d"/></div>
+<div class="mf"><button onclick="document.getElementById('ov-taak').classList.remove('open')">Annuleren</button><button class="teal" id="btn-tk-s" onclick="saveTaak()">Opslaan</button></div>
+</div></div>
+
 <script>
 const SB='https://bstpobqvodljhpjzgnkp.supabase.co';
 const AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
@@ -142,118 +155,138 @@ async function checkAuth(){const s=getSession();if(!s){location.href='login.html
 function isAdmin(me){return me&&me.rol==='admin';}
 
 
-let me=null, regios=[], targets=[], commits=[], dagrapporten=[], profielen=[];
+let me=null, taken=[], profielen=[], regios=[];
+let editTaakId=null, viewUserId=null;
 
 async function init(){
   me=await checkAuth(); if(!me)return;
-  document.getElementById('topbar-user').textContent=(me.naam||me.email)+(me.rol==='admin'?' (Admin)':'');
+  document.getElementById('topbar-user').textContent=me.naam||me.email;
   await loadData();
-  renderDash();
-  checkBadges();
+  render();
 }
 
 async function loadData(){
   const isA=isAdmin(me);
-  regios=await api('GET','/rest/v1/regios?order=naam.asc')||[];
-  targets=await api('GET','/rest/v1/targets?order=periode.desc')||[];
-  const m=nowM();
-  const cu=isA?'/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email,regio_id)':'/rest/v1/commitments?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=datum.desc';
-  commits=await api('GET',cu)||[];
   const today=nowD();
-  const du=isA?'/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email)':'/rest/v1/dagrapporten?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=datum.desc';
-  dagrapporten=await api('GET',du)||[];
-  if(isA) profielen=await api('GET','/rest/v1/profielen')||[];
-}
-
-function checkBadges(){
-  const today=nowD();
-  const hr=new Date().getHours();
-  const myDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
-  const bn=document.getElementById('bn-dag');
-  if(bn) bn.style.display=(!myDag&&hr>=16)?'block':'none';
-  const unc=commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<today);
-  const bt=document.getElementById('bn-taken');
-  if(bt) bt.style.display=unc.length?'block':'none';
-}
-
-function renderDash(){
-  const isA=isAdmin(me);
-  const m=nowM();
-  const today=nowD();
-  const myC=commits.filter(c=>c.user_id===me.id);
-  const myA=myC.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-  const myF=myC.reduce((s,c)=>s+(c.omzet_forecast||0),0);
-  const myT=targets.find(t=>t.type==='persoon'&&t.user_id===me.id&&t.periode===m);
-  const myReg=regios.find(r=>r.id===me.regio_id);
-  const rC=commits.filter(c=>myReg?c.profielen?.regio_id===me.regio_id:c.user_id===me.id);
-  const rA=rC.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-  const rT=myReg?targets.find(t=>t.type==='regio'&&t.regio_id===me.regio_id&&t.periode===m):null;
-  const unc=commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<today);
-  const hr=new Date().getHours();
-  const myDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
-  const bev=commits.filter(c=>c.user_id===me.id&&c.bevestigd);
-  const hit=bev.length?Math.round(bev.filter(c=>c.gehaald).length/bev.length*100):0;
-
-  let h='';
-
-  // Alerts
-  if(unc.length) h+=`<div class="alert warn">⚠️ <strong>${unc.length} commitment${unc.length>1?'s':''} te bevestigen</strong> — <a href="dagrapporten.html" style="color:inherit;font-weight:600">Invullen →</a></div>`;
-  if(!myDag&&hr>=16) h+=`<div class="alert info">📋 Dagrapport van vandaag nog niet ingevuld — <a href="dagrapporten.html" style="color:inherit;font-weight:600">Invullen →</a></div>`;
-
-  // Stats 2x2
-  const mp=myT?pct(myA,myT.omzet_target):null;
-  const rp=rT?pct(rA,rT.omzet_target):null;
-  h+=`<div class="stats-row">
-    <div class="stat"><div class="sv cn">${eur(myA)}</div><div class="sl">Mijn actuals</div>${myT?`<div class="ss">${mp}% van target</div><div class="pb"><div class="pf${mp<50?' re':mp<80?' am':''}" style="width:${mp}%"></div></div>`:''}
-    </div>
-    <div class="stat"><div class="sv" style="color:var(--teal)">${eur(rA)}</div><div class="sl">${myReg?myReg.naam:'Regio'}</div>${rT?`<div class="ss">${rp}% van target</div><div class="pb"><div class="pf${rp<50?' re':rp<80?' am':''}" style="width:${rp}%"></div></div>`:''}
-    </div>
-    <div class="stat"><div class="sv ${unc.length?'ca':'cg'}">${unc.length}</div><div class="sl">Te bevestigen</div></div>
-    <div class="stat"><div class="sv ${hit>=80?'cg':hit>=50?'ca':'cr'}">${hit}%</div><div class="sl">Hit rate</div><div class="ss">${bev.length} bevestigd</div></div>
-  </div>`;
-
-  // Quick actions
-  h+=`<div class="r2" style="margin-bottom:1rem">
-    <button class="teal full" onclick="location.href='dagrapporten.html'">📋 Dagrapport</button>
-    <button class="primary full" onclick="location.href='dagrapporten.html#commit'">🎯 Commitment</button>
-  </div>`;
-
-  // Admin: regio overzicht
+  // Load taken — for admin: all, for user: own
+  const tu=isA?'/rest/v1/taken?order=datum.asc,prioriteit.asc&select=*,profielen(naam,email)':'/rest/v1/taken?user_id=eq.'+me.id+'&order=datum.asc,prioriteit.asc';
+  taken=await api('GET',tu)||[];
   if(isA){
-    h+=`<div class="section-label">Regio overzicht — ${m}</div><div class="card">`;
-    if(!regios.length) h+=`<div class="empty">Nog geen regio's.</div>`;
-    else regios.forEach(r=>{
-      const rc=commits.filter(c=>c.profielen?.regio_id===r.id);
-      const ra=rc.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-      const rf=rc.reduce((s,c)=>s+(c.omzet_forecast||0),0);
-      const rt=targets.find(t=>t.type==='regio'&&t.regio_id===r.id&&t.periode===m);
-      const p=rt?pct(ra,rt.omzet_target):null;
-      h+=`<div class="card-row"><div><div class="row-main">${r.naam}</div><div class="row-sub">${eur(ra)} actuals · ${eur(rf)} forecast</div></div><div class="row-right">${p!==null?`<span style="font-weight:700;font-size:14px;color:${p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)'}">${p}%</span>`:'<span style="color:var(--muted);font-size:12px">geen target</span>'}</div></div>`;
-    });
-    h+=`</div>`;
+    profielen=await api('GET','/rest/v1/profielen')||[];
+    regios=await api('GET','/rest/v1/regios?order=naam.asc')||[];
+  }
+  // Auto-rollover: update taken from past that are not voltooid to today
+  const overdue=taken.filter(t=>t.user_id===me.id&&!t.voltooid&&t.datum<today);
+  for(const t of overdue){
+    try{await api('PATCH','/rest/v1/taken?id=eq.'+t.id,{datum:today});}catch(e){}
+    t.datum=today;
+  }
+}
 
-    // Dagrapport status vandaag
-    h+=`<div class="section-label">Dagrapport status vandaag</div><div class="card">`;
+function render(){
+  const isA=isAdmin(me);
+  const today=nowD();
+  let h=`<div class="page-header"><div><div class="page-title">Taken</div><div class="page-sub">Onafgeronde taken schuiven door naar vandaag.</div></div><button class="teal sm" onclick="openTaakModal()">+ Taak</button></div>`;
+
+  if(isA && !viewUserId){
+    // Admin: per gebruiker
+    h+=`<div class="tag-row"><span class="tag active" onclick="viewUserId=null;render()">Iedereen</span>`;
     profielen.filter(u=>u.rol!=='admin').forEach(u=>{
-      const dag=dagrapporten.find(d=>d.user_id===u.id&&d.datum===today);
-      h+=`<div class="card-row"><div><div class="row-main">${u.naam||u.email}</div><div class="row-sub">${dag?`Maand: ${eur(dag.maandstand)} · Vandaag: ${eur(dag.productie_vandaag)} · Morgen: ${eur(dag.commit_morgen)}`:'Nog niet ingevuld'}</div></div><div class="row-right"><span class="badge ${dag?'b-opgelost':'b-open'}">${dag?'✓ Ingevuld':'Ontbreekt'}</span></div></div>`;
+      h+=`<span class="tag" onclick="viewUserId='${u.id}';render()">${u.naam||u.email}</span>`;
     });
     h+=`</div>`;
-  }
-
-  // Recente commits persoonlijk
-  const rec=commits.filter(c=>c.user_id===me.id).slice(0,3);
-  if(rec.length){
-    h+=`<div class="section-label">Recente commitments</div><div class="card">`;
-    rec.forEach(c=>{
-      const st=c.bevestigd?(c.gehaald?'gehaald':'gemist'):'open2';
-      const sl=c.bevestigd?(c.gehaald?'Gehaald ✓':'Gemist ✗'):'Open';
-      h+=`<div class="card-row"><div><div class="row-main">${fdt(c.datum)} — ${eur(c.omzet_forecast)}</div><div class="row-sub">${c.bevestigd&&c.omzet_actuals!=null?'Actuals: '+eur(c.omzet_actuals):'Nog niet bevestigd'}</div></div><div class="row-right"><span class="badge b-${st}">${sl}</span></div></div>`;
+    profielen.filter(u=>u.rol!=='admin').forEach(u=>{
+      const ut=taken.filter(t=>t.user_id===u.id);
+      const open=ut.filter(t=>!t.voltooid);
+      const reg=regios.find(r=>r.id===u.regio_id);
+      h+=`<div class="section-label">${u.naam||u.email} ${reg?'· '+reg.naam:''} — ${open.length} open</div>`;
+      if(!ut.length){h+=`<div style="font-size:13px;color:var(--muted);margin-bottom:1rem">Geen taken.</div>`;}
+      else {
+        h+=`<div class="card">`;
+        ut.filter(t=>!t.voltooid).forEach(t=>h+=taakRow(t));
+        ut.filter(t=>t.voltooid).forEach(t=>h+=taakRow(t));
+        h+=`</div>`;
+      }
     });
-    h+=`</div>`;
+  } else {
+    const uid=viewUserId||me.id;
+    const myT=taken.filter(t=>t.user_id===uid);
+    if(isA && viewUserId){
+      const u=profielen.find(x=>x.id===viewUserId);
+      h+=`<div class="tag-row"><span class="tag" onclick="viewUserId=null;render()">← Terug</span><span class="tag active">${u?u.naam||u.email:'Gebruiker'}</span></div>`;
+    }
+    const open=myT.filter(t=>!t.voltooid);
+    const done=myT.filter(t=>t.voltooid);
+    // Sort: prio 1 first, then by datum
+    open.sort((a,b)=>a.prioriteit-b.prioriteit||a.datum.localeCompare(b.datum));
+    if(!open.length && !done.length){h+=`<div class="empty">Geen taken. Voeg er een toe!</div>`;}
+    if(open.length){
+      h+=`<div class="section-label">Open (${open.length})</div><div class="card">`;
+      open.forEach(t=>h+=taakRow(t));
+      h+=`</div>`;
+    }
+    if(done.length){
+      h+=`<div class="section-label">Afgerond (${done.length})</div><div class="card">`;
+      done.slice(0,5).forEach(t=>h+=taakRow(t));
+      h+=`</div>`;
+    }
   }
-
   document.getElementById('content').innerHTML=h;
+}
+
+const catColors={'algemeen':'b-user','klant':'b-open','intern':'b-behandeling','prospectie':'b-opgelost'};
+const prioLabels={1:'🔴 Hoog',2:'🟡 Normaal',3:'🟢 Laag'};
+
+function taakRow(t){
+  const canEdit=t.user_id===me.id||isAdmin(me);
+  return `<div class="card-row" style="${t.voltooid?'opacity:.5':''}"><div style="display:flex;align-items:flex-start;gap:10px;flex:1">
+    <input type="checkbox" ${t.voltooid?'checked':''} onchange="toggleTaak(${t.id})" style="width:18px;height:18px;margin-top:2px;flex-shrink:0;accent-color:var(--teal)"/>
+    <div><div class="row-main" style="${t.voltooid?'text-decoration:line-through':''}">${t.tekst}</div>
+    <div class="row-sub">${prioLabels[t.prioriteit]||'Normaal'} · <span class="badge ${catColors[t.categorie]||'b-user'}">${t.categorie}</span> · ${fdt(t.datum)}</div>
+    </div>
+  </div>
+  ${canEdit?`<div class="row-right"><button class="sm" onclick="openTaakModal(${t.id})">✏️</button><button class="sm danger" onclick="delTaak(${t.id})">🗑</button></div>`:''}
+  </div>`;
+}
+
+function openTaakModal(id){
+  const t=id?taken.find(x=>x.id===id):null;
+  editTaakId=id||null;
+  document.getElementById('tk-t').value=t?t.tekst:'';
+  document.getElementById('tk-c').value=t?t.categorie:'algemeen';
+  document.getElementById('tk-p').value=t?t.prioriteit:2;
+  document.getElementById('tk-d').value=t?t.datum:nowD();
+  document.getElementById('ov-taak').classList.add('open');
+}
+
+async function saveTaak(){
+  const tekst=document.getElementById('tk-t').value.trim();
+  if(!tekst){toast('Vul een taak in.');return;}
+  const btn=document.getElementById('btn-tk-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
+  try{
+    const body={tekst,categorie:document.getElementById('tk-c').value,prioriteit:parseInt(document.getElementById('tk-p').value),datum:document.getElementById('tk-d').value,user_id:me.id};
+    if(editTaakId) await api('PATCH','/rest/v1/taken?id=eq.'+editTaakId,body);
+    else await api('POST','/rest/v1/taken',body);
+    document.getElementById('ov-taak').classList.remove('open');
+    await loadData();render();toast('Taak opgeslagen.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+}
+
+async function toggleTaak(id){
+  const t=taken.find(x=>x.id===id);
+  if(!t)return;
+  const vol=!t.voltooid;
+  try{
+    await api('PATCH','/rest/v1/taken?id=eq.'+id,{voltooid:vol,voltooid_op:vol?new Date().toISOString():null});
+    t.voltooid=vol;render();
+    if(vol)toast('Taak afgerond! ✓','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}
+}
+
+async function delTaak(id){
+  if(!confirm('Taak verwijderen?'))return;
+  try{await api('DELETE','/rest/v1/taken?id=eq.'+id);taken=taken.filter(t=>t.id!==id);render();toast('Verwijderd.');}
+  catch(e){toast('Fout: '+e.message,'err');}
 }
 
 init();

@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>Dashboard — TBC</title>
+<title>Dagrapport — TBC</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="manifest" href="manifest.json"/>
 <style>
@@ -111,13 +111,42 @@ textarea{resize:vertical;min-height:80px}
 </div>
 <div class="content" id="content"><div class="empty"><span class="ld dk"></span><br><br>Laden...</div></div>
 <nav class="bottom-nav">
-  <button class="bn-item active" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
-  <button class="bn-item" onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span><span class="bn-badge" id="bn-dag" style="display:none">!</span></button>
-  <button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span><span class="bn-badge" id="bn-taken" style="display:none">!</span></button>
+  <button class="bn-item" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
+  <button class="bn-item active" onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span></button>
+  <button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
   <button class="bn-item" onclick="location.href='klachten.html'"><span class="ic">⚠️</span><span>Klachten</span></button>
   <button class="bn-item" onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
 </nav>
 <div class="tw" id="tw"></div>
+
+<!-- Dagrapport modal -->
+<div class="overlay" id="ov-dag" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal"><div class="modal-handle"></div>
+<div class="mt">Dagrapport invullen</div><div class="ms">Vul je cijfers van vandaag in.</div>
+<div class="field"><label>Maandstand tot nu (€)</label><input type="number" id="dm-ms" placeholder="0" min="0" step="100"/></div>
+<div class="field"><label>Productie intake vandaag (€)</label><input type="number" id="dm-pv" placeholder="0" min="0" step="100"/></div>
+<div class="field"><label>Commit voor morgen (€)</label><input type="number" id="dm-cm" placeholder="0" min="0" step="100"/></div>
+<div class="field"><label>Notitie (optioneel)</label><textarea id="dm-n" placeholder="Bijzonderheden, uitleg..."></textarea></div>
+<div class="mf"><button onclick="document.getElementById('ov-dag').classList.remove('open')">Annuleren</button><button class="teal" id="btn-dag-s" onclick="saveDag()">Opslaan</button></div>
+</div></div>
+
+<!-- Commitment modal -->
+<div class="overlay" id="ov-commit" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal"><div class="modal-handle"></div>
+<div class="mt">Commitment invoeren</div><div class="ms">Wat ga jij morgen realiseren?</div>
+<div class="field"><label>Datum *</label><input type="date" id="cm-d"/></div>
+<div class="field"><label>Omzet forecast (€) *</label><input type="number" id="cm-o" placeholder="2500" min="0" step="100"/></div>
+<div class="mf"><button onclick="document.getElementById('ov-commit').classList.remove('open')">Annuleren</button><button class="teal" id="btn-cm-s" onclick="saveCommit()">Opslaan</button></div>
+</div></div>
+
+<!-- Bevestig modal -->
+<div class="overlay" id="ov-bev" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal"><div class="modal-handle"></div>
+<div class="mt">Commitment bevestigen</div><div class="ms">Wat heb je daadwerkelijk gerealiseerd?</div>
+<div class="field"><label>Werkelijke omzet (€) *</label><input type="number" id="bv-o" placeholder="0" min="0" step="100"/></div>
+<div class="mf"><button onclick="document.getElementById('ov-bev').classList.remove('open')">Annuleren</button><button class="teal" id="btn-bv-s" onclick="saveBev()">Bevestigen</button></div>
+</div></div>
+
 <script>
 const SB='https://bstpobqvodljhpjzgnkp.supabase.co';
 const AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
@@ -142,118 +171,180 @@ async function checkAuth(){const s=getSession();if(!s){location.href='login.html
 function isAdmin(me){return me&&me.rol==='admin';}
 
 
-let me=null, regios=[], targets=[], commits=[], dagrapporten=[], profielen=[];
+let me=null, commits=[], dagrapporten=[], profielen=[], regios=[];
+let editDagId=null, bevPend=null;
 
 async function init(){
   me=await checkAuth(); if(!me)return;
-  document.getElementById('topbar-user').textContent=(me.naam||me.email)+(me.rol==='admin'?' (Admin)':'');
+  document.getElementById('topbar-user').textContent=me.naam||me.email;
   await loadData();
-  renderDash();
-  checkBadges();
+  const hash=location.hash;
+  if(hash==='#commit') renderCommits();
+  else renderDagrapporten();
 }
 
 async function loadData(){
-  const isA=isAdmin(me);
+  const isA=isAdmin(me); const m=nowM(); const today=nowD();
   regios=await api('GET','/rest/v1/regios?order=naam.asc')||[];
-  targets=await api('GET','/rest/v1/targets?order=periode.desc')||[];
-  const m=nowM();
   const cu=isA?'/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email,regio_id)':'/rest/v1/commitments?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=datum.desc';
   commits=await api('GET',cu)||[];
-  const today=nowD();
   const du=isA?'/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email)':'/rest/v1/dagrapporten?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=datum.desc';
   dagrapporten=await api('GET',du)||[];
   if(isA) profielen=await api('GET','/rest/v1/profielen')||[];
 }
 
-function checkBadges(){
-  const today=nowD();
-  const hr=new Date().getHours();
-  const myDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
-  const bn=document.getElementById('bn-dag');
-  if(bn) bn.style.display=(!myDag&&hr>=16)?'block':'none';
-  const unc=commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<today);
-  const bt=document.getElementById('bn-taken');
-  if(bt) bt.style.display=unc.length?'block':'none';
+let activeTab='dag';
+function switchTab(t){
+  activeTab=t;
+  if(t==='dag') renderDagrapporten();
+  else renderCommits();
 }
 
-function renderDash(){
-  const isA=isAdmin(me);
-  const m=nowM();
-  const today=nowD();
-  const myC=commits.filter(c=>c.user_id===me.id);
-  const myA=myC.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-  const myF=myC.reduce((s,c)=>s+(c.omzet_forecast||0),0);
-  const myT=targets.find(t=>t.type==='persoon'&&t.user_id===me.id&&t.periode===m);
-  const myReg=regios.find(r=>r.id===me.regio_id);
-  const rC=commits.filter(c=>myReg?c.profielen?.regio_id===me.regio_id:c.user_id===me.id);
-  const rA=rC.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-  const rT=myReg?targets.find(t=>t.type==='regio'&&t.regio_id===me.regio_id&&t.periode===m):null;
-  const unc=commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<today);
-  const hr=new Date().getHours();
+function renderDagrapporten(){
+  activeTab='dag';
+  const isA=isAdmin(me); const today=nowD();
   const myDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
-  const bev=commits.filter(c=>c.user_id===me.id&&c.bevestigd);
-  const hit=bev.length?Math.round(bev.filter(c=>c.gehaald).length/bev.length*100):0;
-
-  let h='';
-
-  // Alerts
-  if(unc.length) h+=`<div class="alert warn">⚠️ <strong>${unc.length} commitment${unc.length>1?'s':''} te bevestigen</strong> — <a href="dagrapporten.html" style="color:inherit;font-weight:600">Invullen →</a></div>`;
-  if(!myDag&&hr>=16) h+=`<div class="alert info">📋 Dagrapport van vandaag nog niet ingevuld — <a href="dagrapporten.html" style="color:inherit;font-weight:600">Invullen →</a></div>`;
-
-  // Stats 2x2
-  const mp=myT?pct(myA,myT.omzet_target):null;
-  const rp=rT?pct(rA,rT.omzet_target):null;
-  h+=`<div class="stats-row">
-    <div class="stat"><div class="sv cn">${eur(myA)}</div><div class="sl">Mijn actuals</div>${myT?`<div class="ss">${mp}% van target</div><div class="pb"><div class="pf${mp<50?' re':mp<80?' am':''}" style="width:${mp}%"></div></div>`:''}
-    </div>
-    <div class="stat"><div class="sv" style="color:var(--teal)">${eur(rA)}</div><div class="sl">${myReg?myReg.naam:'Regio'}</div>${rT?`<div class="ss">${rp}% van target</div><div class="pb"><div class="pf${rp<50?' re':rp<80?' am':''}" style="width:${rp}%"></div></div>`:''}
-    </div>
-    <div class="stat"><div class="sv ${unc.length?'ca':'cg'}">${unc.length}</div><div class="sl">Te bevestigen</div></div>
-    <div class="stat"><div class="sv ${hit>=80?'cg':hit>=50?'ca':'cr'}">${hit}%</div><div class="sl">Hit rate</div><div class="ss">${bev.length} bevestigd</div></div>
+  let h=`<div class="page-header"><div><div class="page-title">Dagrapporten</div></div></div>`;
+  h+=`<div class="tag-row">
+    <span class="tag ${activeTab==='dag'?'active':''}" onclick="switchTab('dag')">📋 Dagrapporten</span>
+    <span class="tag ${activeTab==='commit'?'active':''}" onclick="switchTab('commit')">🎯 Commitments</span>
   </div>`;
-
-  // Quick actions
-  h+=`<div class="r2" style="margin-bottom:1rem">
-    <button class="teal full" onclick="location.href='dagrapporten.html'">📋 Dagrapport</button>
-    <button class="primary full" onclick="location.href='dagrapporten.html#commit'">🎯 Commitment</button>
-  </div>`;
-
-  // Admin: regio overzicht
+  if(!myDag){
+    h+=`<div class="alert warn">Dagrapport van vandaag nog niet ingevuld.</div>`;
+    h+=`<button class="teal full" onclick="openDagModal(null)" style="margin-bottom:1rem">+ Dagrapport invullen</button>`;
+  } else {
+    h+=`<div class="alert success">✓ Dagrapport vandaag ingevuld.</div>`;
+    h+=`<button class="sm full" onclick="openDagModal(${myDag.id})" style="margin-bottom:1rem">✏️ Bewerken</button>`;
+  }
   if(isA){
-    h+=`<div class="section-label">Regio overzicht — ${m}</div><div class="card">`;
-    if(!regios.length) h+=`<div class="empty">Nog geen regio's.</div>`;
-    else regios.forEach(r=>{
-      const rc=commits.filter(c=>c.profielen?.regio_id===r.id);
-      const ra=rc.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-      const rf=rc.reduce((s,c)=>s+(c.omzet_forecast||0),0);
-      const rt=targets.find(t=>t.type==='regio'&&t.regio_id===r.id&&t.periode===m);
-      const p=rt?pct(ra,rt.omzet_target):null;
-      h+=`<div class="card-row"><div><div class="row-main">${r.naam}</div><div class="row-sub">${eur(ra)} actuals · ${eur(rf)} forecast</div></div><div class="row-right">${p!==null?`<span style="font-weight:700;font-size:14px;color:${p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)'}">${p}%</span>`:'<span style="color:var(--muted);font-size:12px">geen target</span>'}</div></div>`;
-    });
-    h+=`</div>`;
-
-    // Dagrapport status vandaag
-    h+=`<div class="section-label">Dagrapport status vandaag</div><div class="card">`;
+    h+=`<div class="section-label">Alle dagrapporten vandaag</div>`;
     profielen.filter(u=>u.rol!=='admin').forEach(u=>{
-      const dag=dagrapporten.find(d=>d.user_id===u.id&&d.datum===today);
-      h+=`<div class="card-row"><div><div class="row-main">${u.naam||u.email}</div><div class="row-sub">${dag?`Maand: ${eur(dag.maandstand)} · Vandaag: ${eur(dag.productie_vandaag)} · Morgen: ${eur(dag.commit_morgen)}`:'Nog niet ingevuld'}</div></div><div class="row-right"><span class="badge ${dag?'b-opgelost':'b-open'}">${dag?'✓ Ingevuld':'Ontbreekt'}</span></div></div>`;
+      const d=dagrapporten.find(x=>x.user_id===u.id&&x.datum===today);
+      const reg=regios.find(r=>r.id===u.regio_id);
+      h+=`<div class="card"><div class="card-row"><div><div class="row-main">${u.naam||u.email} ${reg?'<span class="badge b-user" style="margin-left:4px">'+reg.naam+'</span>':''}</div><div class="row-sub">${d?`Maand: ${eur(d.maandstand)} · Vandaag: ${eur(d.productie_vandaag)} · Morgen: ${eur(d.commit_morgen)}`:'Nog niet ingevuld'}</div></div><div class="row-right"><span class="badge ${d?'b-opgelost':'b-open'}">${d?'✓':'✗'}</span></div></div>${d&&d.notitie?`<div style="padding:10px 16px;font-size:13px;color:var(--muted);background:#f8f9fb;border-top:1px solid var(--border)">💬 ${d.notitie}</div>`:''}</div>`;
+    });
+    h+=`<div class="section-label">Historisch overzicht</div><div class="card">`;
+    const uniq=[...new Set(dagrapporten.map(d=>d.datum))].sort().reverse().slice(0,14);
+    uniq.forEach(d=>{
+      const dags=dagrapporten.filter(x=>x.datum===d);
+      const totM=dags.reduce((s,x)=>s+(x.maandstand||0),0);
+      const totP=dags.reduce((s,x)=>s+(x.productie_vandaag||0),0);
+      h+=`<div class="card-row"><div><div class="row-main">${fdt(d)}</div><div class="row-sub">${dags.length} rapport${dags.length!==1?'en':''} · Productie: ${eur(totP)}</div></div><div class="row-right"><span style="font-size:13px;font-weight:600">${eur(totM)}</span></div></div>`;
+    });
+    h+=`</div>`;
+  } else {
+    h+=`<div class="section-label">Mijn dagrapporten</div><div class="card">`;
+    const mine=dagrapporten.filter(d=>d.user_id===me.id).slice(0,14);
+    if(!mine.length) h+=`<div class="empty">Nog geen dagrapporten.</div>`;
+    else mine.forEach(d=>{
+      h+=`<div class="card-row"><div><div class="row-main">${fdt(d.datum)}</div><div class="row-sub">Maand: ${eur(d.maandstand)} · Vandaag: ${eur(d.productie_vandaag)} · Morgen: ${eur(d.commit_morgen)}</div></div><div class="row-right"><button class="sm" onclick="openDagModal(${d.id})">✏️</button></div></div>`;
     });
     h+=`</div>`;
   }
-
-  // Recente commits persoonlijk
-  const rec=commits.filter(c=>c.user_id===me.id).slice(0,3);
-  if(rec.length){
-    h+=`<div class="section-label">Recente commitments</div><div class="card">`;
-    rec.forEach(c=>{
-      const st=c.bevestigd?(c.gehaald?'gehaald':'gemist'):'open2';
-      const sl=c.bevestigd?(c.gehaald?'Gehaald ✓':'Gemist ✗'):'Open';
-      h+=`<div class="card-row"><div><div class="row-main">${fdt(c.datum)} — ${eur(c.omzet_forecast)}</div><div class="row-sub">${c.bevestigd&&c.omzet_actuals!=null?'Actuals: '+eur(c.omzet_actuals):'Nog niet bevestigd'}</div></div><div class="row-right"><span class="badge b-${st}">${sl}</span></div></div>`;
-    });
-    h+=`</div>`;
-  }
-
   document.getElementById('content').innerHTML=h;
+}
+
+function renderCommits(){
+  activeTab='commit';
+  const isA=isAdmin(me); const today=nowD();
+  const unc=commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<today);
+  let h=`<div class="page-header"><div><div class="page-title">Commitments</div></div><button class="teal sm" onclick="openCommitModal()">+ Nieuw</button></div>`;
+  h+=`<div class="tag-row">
+    <span class="tag" onclick="switchTab('dag')">📋 Dagrapporten</span>
+    <span class="tag active" onclick="switchTab('commit')">🎯 Commitments</span>
+  </div>`;
+  if(unc.length) h+=`<div class="alert warn">⚠️ ${unc.length} commitment${unc.length>1?'s':''} wachten op bevestiging.</div>`;
+  if(isA){
+    const perU={};
+    commits.forEach(c=>{const uid=c.user_id;const n=c.profielen?(c.profielen.naam||c.profielen.email):'?';if(!perU[uid])perU[uid]={n,items:[]};perU[uid].items.push(c);});
+    h+=`<div class="card">`;
+    Object.keys(perU).forEach(uid=>{
+      const u=perU[uid];
+      h+=`<div style="padding:8px 16px;background:#f8f9fb;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">${u.n}</div>`;
+      u.items.forEach(c=>h+=commitRow(c));
+    });
+    h+=`</div>`;
+  } else {
+    const mine=commits.filter(c=>c.user_id===me.id);
+    h+=`<div class="card">${mine.length?mine.map(commitRow).join(''):'<div class="empty">Nog geen commitments.</div>'}</div>`;
+  }
+  document.getElementById('content').innerHTML=h;
+}
+
+function commitRow(c){
+  const st=c.bevestigd?(c.gehaald?'gehaald':'gemist'):'open2';
+  const sl=c.bevestigd?(c.gehaald?'Gehaald ✓':'Gemist ✗'):'Open';
+  const can=!c.bevestigd&&c.datum<=nowD()&&(c.user_id===me.id||isAdmin(me));
+  return `<div class="card-row"><div><div class="row-main">${fdt(c.datum)} — ${eur(c.omzet_forecast)}</div><div class="row-sub">${c.bevestigd&&c.omzet_actuals!=null?'Actuals: '+eur(c.omzet_actuals):'Forecast'}</div></div><div class="row-right"><span class="badge b-${st}">${sl}</span>${can?`<button class="sm amber" onclick="openBev(${c.id})">✓</button>`:''}<button class="sm danger" onclick="delC(${c.id})">🗑</button></div></div>`;
+}
+
+function openDagModal(id){
+  const d=id?dagrapporten.find(x=>x.id===id):null;
+  editDagId=id||null;
+  document.getElementById('dm-ms').value=d?d.maandstand:'';
+  document.getElementById('dm-pv').value=d?d.productie_vandaag:'';
+  document.getElementById('dm-cm').value=d?d.commit_morgen:'';
+  document.getElementById('dm-n').value=d?d.notitie||'':'';
+  document.getElementById('ov-dag').classList.add('open');
+}
+
+async function saveDag(){
+  const ms=parseFloat(document.getElementById('dm-ms').value)||0;
+  const pv=parseFloat(document.getElementById('dm-pv').value)||0;
+  const cm=parseFloat(document.getElementById('dm-cm').value)||0;
+  const n=document.getElementById('dm-n').value.trim();
+  const btn=document.getElementById('btn-dag-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
+  try{
+    const body={maandstand:ms,productie_vandaag:pv,commit_morgen:cm,notitie:n||null,user_id:me.id,datum:nowD()};
+    if(editDagId) await api('PATCH','/rest/v1/dagrapporten?id=eq.'+editDagId,body);
+    else await api('POST','/rest/v1/dagrapporten',body);
+    document.getElementById('ov-dag').classList.remove('open');
+    await loadData();renderDagrapporten();toast('Dagrapport opgeslagen.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+}
+
+function openCommitModal(){
+  const tom=new Date();tom.setDate(tom.getDate()+1);
+  document.getElementById('cm-d').value=tom.toISOString().slice(0,10);
+  document.getElementById('cm-o').value='';
+  document.getElementById('ov-commit').classList.add('open');
+}
+
+async function saveCommit(){
+  const d=document.getElementById('cm-d').value;
+  const o=parseFloat(document.getElementById('cm-o').value);
+  if(!d||isNaN(o)){toast('Vul datum en omzet in.');return;}
+  const btn=document.getElementById('btn-cm-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
+  try{
+    await api('POST','/rest/v1/commitments',{user_id:me.id,regio_id:me.regio_id||null,datum:d,omzet_forecast:o});
+    document.getElementById('ov-commit').classList.remove('open');
+    await loadData();renderCommits();toast('Commitment opgeslagen.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+}
+
+function openBev(id){
+  bevPend=id;
+  document.getElementById('bv-o').value='';
+  document.getElementById('ov-bev').classList.add('open');
+}
+
+async function saveBev(){
+  const o=parseFloat(document.getElementById('bv-o').value);
+  if(isNaN(o)){toast('Vul werkelijke omzet in.');return;}
+  const c=commits.find(x=>x.id===bevPend);
+  const btn=document.getElementById('btn-bv-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
+  try{
+    await api('PATCH','/rest/v1/commitments?id=eq.'+bevPend,{bevestigd:true,omzet_actuals:o,gehaald:o>=(c.omzet_forecast||0)});
+    document.getElementById('ov-bev').classList.remove('open');
+    await loadData();renderCommits();
+    toast(o>=(c.omzet_forecast||0)?'Target gehaald! 🎉':'Bevestigd.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Bevestigen';}
+}
+
+async function delC(id){
+  if(!confirm('Verwijderen?'))return;
+  try{await api('DELETE','/rest/v1/commitments?id=eq.'+id);await loadData();renderCommits();toast('Verwijderd.');}
+  catch(e){toast('Fout: '+e.message,'err');}
 }
 
 init();

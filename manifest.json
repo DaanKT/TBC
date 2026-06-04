@@ -1,0 +1,20 @@
+{
+  "name": "TBC Sales Platform",
+  "short_name": "TBC",
+  "start_url": "dashboard.html",
+  "display": "standalone",
+  "background_color": "#0B1F3A",
+  "theme_color": "#0B1F3A",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192/0B1F3A/4FD1A5?text=TBC",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512/0B1F3A/4FD1A5?text=TBC",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>Dashboard — TBC</title>
+<title>Klachten — TBC</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="manifest" href="manifest.json"/>
 <style>
@@ -109,15 +109,29 @@ textarea{resize:vertical;min-height:80px}
   <div class="topbar-logo">The Branding <span>Club</span></div>
   <div class="topbar-right"><span class="topbar-user" id="topbar-user"></span><button class="btn-lo" onclick="logout()">↩</button></div>
 </div>
-<div class="content" id="content"><div class="empty"><span class="ld dk"></span><br><br>Laden...</div></div>
+<div class="content" id="content"><div class="empty"><span class="ld dk"></span></div></div>
 <nav class="bottom-nav">
-  <button class="bn-item active" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
-  <button class="bn-item" onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span><span class="bn-badge" id="bn-dag" style="display:none">!</span></button>
-  <button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span><span class="bn-badge" id="bn-taken" style="display:none">!</span></button>
-  <button class="bn-item" onclick="location.href='klachten.html'"><span class="ic">⚠️</span><span>Klachten</span></button>
+  <button class="bn-item" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
+  <button class="bn-item" onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span></button>
+  <button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
+  <button class="bn-item active" onclick="location.href='klachten.html'"><span class="ic">⚠️</span><span>Klachten</span></button>
   <button class="bn-item" onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
 </nav>
 <div class="tw" id="tw"></div>
+<div class="overlay" id="ov-kl" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal"><div class="modal-handle"></div><div class="mt">Nieuwe klacht</div>
+<div class="field"><label>Klantnaam *</label><input type="text" id="kl-k" placeholder="bijv. De Wildse Hut"/></div>
+<div class="field"><label>Deal nummer</label><input type="text" id="kl-d" placeholder="optioneel"/></div>
+<div class="field"><label>Samenvatting *</label><textarea id="kl-s"></textarea></div>
+<div class="field"><label>Status</label><select id="kl-st" onchange="document.getElementById('kl-ow').style.display=this.value==='opgelost'?'block':'none'"><option value="open">Open</option><option value="behandeling">In behandeling</option><option value="wacht">Wacht op klant</option><option value="opgelost">Opgelost</option></select></div>
+<div class="field" id="kl-ow" style="display:none"><label>Oplossing *</label><textarea id="kl-op"></textarea></div>
+<div class="mf"><button onclick="document.getElementById('ov-kl').classList.remove('open')">Annuleren</button><button class="teal" id="btn-kl-s" onclick="saveKlacht()">Opslaan</button></div>
+</div></div>
+<div class="overlay" id="ov-op" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal"><div class="modal-handle"></div><div class="mt">Klacht oplossen</div>
+<div class="field"><label>Oplossing *</label><textarea id="op-t"></textarea></div>
+<div class="mf"><button onclick="document.getElementById('ov-op').classList.remove('open')">Annuleren</button><button class="teal" id="btn-op-s" onclick="saveOpl()">Opslaan als opgelost</button></div>
+</div></div>
 <script>
 const SB='https://bstpobqvodljhpjzgnkp.supabase.co';
 const AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
@@ -142,120 +156,131 @@ async function checkAuth(){const s=getSession();if(!s){location.href='login.html
 function isAdmin(me){return me&&me.rol==='admin';}
 
 
-let me=null, regios=[], targets=[], commits=[], dagrapporten=[], profielen=[];
+let me=null, klachten=[], notities=[], profielen=[], regios=[];
+let openKlant=null, kFilter='all', oplPend=null;
 
 async function init(){
   me=await checkAuth(); if(!me)return;
-  document.getElementById('topbar-user').textContent=(me.naam||me.email)+(me.rol==='admin'?' (Admin)':'');
-  await loadData();
-  renderDash();
-  checkBadges();
+  document.getElementById('topbar-user').textContent=me.naam||me.email;
+  await loadData(); render();
 }
 
 async function loadData(){
   const isA=isAdmin(me);
-  regios=await api('GET','/rest/v1/regios?order=naam.asc')||[];
-  targets=await api('GET','/rest/v1/targets?order=periode.desc')||[];
-  const m=nowM();
-  const cu=isA?'/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email,regio_id)':'/rest/v1/commitments?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=datum.desc';
-  commits=await api('GET',cu)||[];
-  const today=nowD();
-  const du=isA?'/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email)':'/rest/v1/dagrapporten?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=datum.desc';
-  dagrapporten=await api('GET',du)||[];
-  if(isA) profielen=await api('GET','/rest/v1/profielen')||[];
+  // IEDEREEN ziet klachten — medewerkers eigen, admin alles
+  const ku=isA?'/rest/v1/klachten?order=aangemaakt_op.desc&select=*,profielen(naam,email)':'/rest/v1/klachten?user_id=eq.'+me.id+'&order=aangemaakt_op.desc';
+  klachten=await api('GET',ku)||[];
+  const ids=klachten.map(k=>k.id);
+  notities=ids.length?await api('GET','/rest/v1/notities?klacht_id=in.('+ids.join(',')+')&order=aangemaakt_op.asc&select=*,profielen(naam,email)')||[]:[];
+  if(isA){profielen=await api('GET','/rest/v1/profielen')||[];regios=await api('GET','/rest/v1/regios?order=naam.asc')||[];}
 }
 
-function checkBadges(){
-  const today=nowD();
-  const hr=new Date().getHours();
-  const myDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
-  const bn=document.getElementById('bn-dag');
-  if(bn) bn.style.display=(!myDag&&hr>=16)?'block':'none';
-  const unc=commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<today);
-  const bt=document.getElementById('bn-taken');
-  if(bt) bt.style.display=unc.length?'block':'none';
-}
+const SM={open:{l:'Open',c:'b-open'},behandeling:{l:'In behandeling',c:'b-behandeling'},wacht:{l:'Wacht op klant',c:'b-wacht'},opgelost:{l:'Opgelost',c:'b-opgelost'}};
 
-function renderDash(){
+function render(){
   const isA=isAdmin(me);
-  const m=nowM();
-  const today=nowD();
-  const myC=commits.filter(c=>c.user_id===me.id);
-  const myA=myC.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-  const myF=myC.reduce((s,c)=>s+(c.omzet_forecast||0),0);
-  const myT=targets.find(t=>t.type==='persoon'&&t.user_id===me.id&&t.periode===m);
-  const myReg=regios.find(r=>r.id===me.regio_id);
-  const rC=commits.filter(c=>myReg?c.profielen?.regio_id===me.regio_id:c.user_id===me.id);
-  const rA=rC.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-  const rT=myReg?targets.find(t=>t.type==='regio'&&t.regio_id===me.regio_id&&t.periode===m):null;
-  const unc=commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<today);
-  const hr=new Date().getHours();
-  const myDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
-  const bev=commits.filter(c=>c.user_id===me.id&&c.bevestigd);
-  const hit=bev.length?Math.round(bev.filter(c=>c.gehaald).length/bev.length*100):0;
-
-  let h='';
-
-  // Alerts
-  if(unc.length) h+=`<div class="alert warn">⚠️ <strong>${unc.length} commitment${unc.length>1?'s':''} te bevestigen</strong> — <a href="dagrapporten.html" style="color:inherit;font-weight:600">Invullen →</a></div>`;
-  if(!myDag&&hr>=16) h+=`<div class="alert info">📋 Dagrapport van vandaag nog niet ingevuld — <a href="dagrapporten.html" style="color:inherit;font-weight:600">Invullen →</a></div>`;
-
-  // Stats 2x2
-  const mp=myT?pct(myA,myT.omzet_target):null;
-  const rp=rT?pct(rA,rT.omzet_target):null;
-  h+=`<div class="stats-row">
-    <div class="stat"><div class="sv cn">${eur(myA)}</div><div class="sl">Mijn actuals</div>${myT?`<div class="ss">${mp}% van target</div><div class="pb"><div class="pf${mp<50?' re':mp<80?' am':''}" style="width:${mp}%"></div></div>`:''}
-    </div>
-    <div class="stat"><div class="sv" style="color:var(--teal)">${eur(rA)}</div><div class="sl">${myReg?myReg.naam:'Regio'}</div>${rT?`<div class="ss">${rp}% van target</div><div class="pb"><div class="pf${rp<50?' re':rp<80?' am':''}" style="width:${rp}%"></div></div>`:''}
-    </div>
-    <div class="stat"><div class="sv ${unc.length?'ca':'cg'}">${unc.length}</div><div class="sl">Te bevestigen</div></div>
-    <div class="stat"><div class="sv ${hit>=80?'cg':hit>=50?'ca':'cr'}">${hit}%</div><div class="sl">Hit rate</div><div class="ss">${bev.length} bevestigd</div></div>
-  </div>`;
-
-  // Quick actions
-  h+=`<div class="r2" style="margin-bottom:1rem">
-    <button class="teal full" onclick="location.href='dagrapporten.html'">📋 Dagrapport</button>
-    <button class="primary full" onclick="location.href='dagrapporten.html#commit'">🎯 Commitment</button>
-  </div>`;
-
-  // Admin: regio overzicht
-  if(isA){
-    h+=`<div class="section-label">Regio overzicht — ${m}</div><div class="card">`;
-    if(!regios.length) h+=`<div class="empty">Nog geen regio's.</div>`;
-    else regios.forEach(r=>{
-      const rc=commits.filter(c=>c.profielen?.regio_id===r.id);
-      const ra=rc.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-      const rf=rc.reduce((s,c)=>s+(c.omzet_forecast||0),0);
-      const rt=targets.find(t=>t.type==='regio'&&t.regio_id===r.id&&t.periode===m);
-      const p=rt?pct(ra,rt.omzet_target):null;
-      h+=`<div class="card-row"><div><div class="row-main">${r.naam}</div><div class="row-sub">${eur(ra)} actuals · ${eur(rf)} forecast</div></div><div class="row-right">${p!==null?`<span style="font-weight:700;font-size:14px;color:${p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)'}">${p}%</span>`:'<span style="color:var(--muted);font-size:12px">geen target</span>'}</div></div>`;
+  const filt=kFilter==='all'?klachten:kFilter==='behandeling'?klachten.filter(k=>k.status==='behandeling'||k.status==='wacht'):klachten.filter(k=>k.status===kFilter);
+  let h=`<div class="page-header"><div><div class="page-title">Klachten</div></div><button class="teal sm" onclick="openKM()">+ Klacht</button></div>`;
+  const stats=[['all','Totaal',klachten.length,'cn'],['open','Open',klachten.filter(k=>k.status==='open').length,'cr'],['behandeling','Lopend',klachten.filter(k=>k.status==='behandeling'||k.status==='wacht').length,'ca'],['opgelost','Opgelost',klachten.filter(k=>k.status==='opgelost').length,'cg']];
+  h+=`<div class="stats-row">`+stats.map(([f,l,n,c])=>`<div class="stat click${kFilter===f?' act':''}" onclick="setF('${f}')"><div class="sv ${c}">${n}</div><div class="sl">${l}</div></div>`).join('')+`</div>`;
+  const g={};filt.forEach(k=>{if(!g[k.klant])g[k.klant]=[];g[k.klant].push(k);});
+  if(!Object.keys(g).length){h+=`<div class="empty">Geen klachten gevonden.</div>`;}
+  else if(isA){
+    const pu={};filt.forEach(k=>{const uid=k.user_id||'?';const n=k.profielen?(k.profielen.naam||k.profielen.email):'?';if(!pu[uid])pu[uid]={n,items:[]};pu[uid].items.push(k);});
+    Object.keys(pu).forEach(uid=>{
+      const u=pu[uid];const ug={};u.items.forEach(k=>{if(!ug[k.klant])ug[k.klant]=[];ug[k.klant].push(k);});
+      h+=`<div class="section-label">${u.n}</div>`;
+      Object.keys(ug).forEach(kl=>h+=klantRow(kl,ug[kl]));
     });
-    h+=`</div>`;
-
-    // Dagrapport status vandaag
-    h+=`<div class="section-label">Dagrapport status vandaag</div><div class="card">`;
-    profielen.filter(u=>u.rol!=='admin').forEach(u=>{
-      const dag=dagrapporten.find(d=>d.user_id===u.id&&d.datum===today);
-      h+=`<div class="card-row"><div><div class="row-main">${u.naam||u.email}</div><div class="row-sub">${dag?`Maand: ${eur(dag.maandstand)} · Vandaag: ${eur(dag.productie_vandaag)} · Morgen: ${eur(dag.commit_morgen)}`:'Nog niet ingevuld'}</div></div><div class="row-right"><span class="badge ${dag?'b-opgelost':'b-open'}">${dag?'✓ Ingevuld':'Ontbreekt'}</span></div></div>`;
-    });
-    h+=`</div>`;
-  }
-
-  // Recente commits persoonlijk
-  const rec=commits.filter(c=>c.user_id===me.id).slice(0,3);
-  if(rec.length){
-    h+=`<div class="section-label">Recente commitments</div><div class="card">`;
-    rec.forEach(c=>{
-      const st=c.bevestigd?(c.gehaald?'gehaald':'gemist'):'open2';
-      const sl=c.bevestigd?(c.gehaald?'Gehaald ✓':'Gemist ✗'):'Open';
-      h+=`<div class="card-row"><div><div class="row-main">${fdt(c.datum)} — ${eur(c.omzet_forecast)}</div><div class="row-sub">${c.bevestigd&&c.omzet_actuals!=null?'Actuals: '+eur(c.omzet_actuals):'Nog niet bevestigd'}</div></div><div class="row-right"><span class="badge b-${st}">${sl}</span></div></div>`;
-    });
-    h+=`</div>`;
-  }
-
+  } else {Object.keys(g).forEach(kl=>h+=klantRow(kl,g[kl]));}
   document.getElementById('content').innerHTML=h;
 }
 
+function setF(f){kFilter=f;render();}
+
+function klantRow(klant,items){
+  const isO=openKlant===klant;
+  const oc=items.filter(k=>k.status!=='opgelost').length;
+  const bdg=[...new Set(items.map(k=>k.status))].map(s=>`<span class="badge ${SM[s].c}">${SM[s].l}</span>`).join('');
+  return `<div class="card"><div class="card-row click${isO?' act':''}" onclick="togK('${esc(klant)}')">
+    <div><div class="row-main">${klant}</div><div class="row-sub">${items.length} klacht${items.length!==1?'en':''}${oc>0?' · '+oc+' open':''}</div></div>
+    <div class="row-right"><div style="display:flex;gap:4px;flex-wrap:wrap">${bdg}</div><span class="chev${isO?' open':''}">▼</span></div>
+  </div>
+  <div class="dp${isO?' open':''}"><div class="di">${items.map(k=>klCard(k,klant)).join('')}</div></div></div>`;
+}
+
+function klCard(k,klant){
+  const isA=isAdmin(me);const ce=isA||k.user_id===me.id;
+  const nots=notities.filter(n=>n.klacht_id===k.id);
+  const nh=nots.length?nots.map(n=>`<div style="display:flex;gap:8px;margin-bottom:6px"><div style="width:7px;height:7px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:5px"></div><div><div style="font-size:13px">${n.tekst.replace(/</g,'&lt;')}</div><div style="font-size:11px;color:var(--muted)">${n.profielen?(n.profielen.naam||n.profielen.email):''} · ${fdt(n.aangemaakt_op)}</div></div></div>`).join(''):`<div style="font-size:12px;color:var(--muted);margin-bottom:6px">Nog geen notities.</div>`;
+  const sc=ce?`<select onchange="stChg(${k.id},this.value,'${esc(klant)}')" style="font-size:13px;padding:6px 8px"><option value="open"${k.status==='open'?' selected':''}>Open</option><option value="behandeling"${k.status==='behandeling'?' selected':''}>In behandeling</option><option value="wacht"${k.status==='wacht'?' selected':''}>Wacht op klant</option><option value="opgelost"${k.status==='opgelost'?' selected':''}>Opgelost</option></select>`:`<span class="badge ${SM[k.status].c}">${SM[k.status].l}</span>`;
+  return `<div style="background:var(--bg);border-radius:var(--rs);padding:12px;margin-bottom:10px">
+    <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap"><span class="badge ${SM[k.status].c}">${SM[k.status].l}</span>${k.deal?`<span style="font-size:11px;color:var(--muted)">${k.deal}</span>`:''}<span style="font-size:11px;color:var(--muted)">${fdt(k.aangemaakt_op)}</span></div>
+    <div style="font-size:13px;margin-bottom:8px">${k.samenvatting.replace(/</g,'&lt;')}</div>
+    ${k.oplossing?`<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--rs);padding:8px 10px;font-size:12px;color:#166534;margin-bottom:8px"><strong>Oplossing:</strong> ${k.oplossing.replace(/</g,'&lt;')}</div>`:''}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">${sc}${ce?`<button class="sm danger" onclick="delKl(${k.id},'${esc(klant)}')">🗑</button>`:''}</div>
+    <div style="border-top:1px solid var(--border);padding-top:10px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Notities</div>
+      <div>${nh}</div>
+      <div style="display:flex;gap:6px;margin-top:8px"><input type="text" id="ni-${k.id}" placeholder="Notitie..." style="flex:1;padding:7px 10px;font-size:13px" onkeydown="if(event.key==='Enter')addN(${k.id},'${esc(klant)}')"/><button class="sm" onclick="addN(${k.id},'${esc(klant)}')">+</button></div>
+    </div>
+  </div>`;
+}
+
+function togK(k){openKlant=openKlant===k?null:k;render();}
+
+function openKM(){
+  document.getElementById('kl-k').value='';document.getElementById('kl-d').value='';
+  document.getElementById('kl-s').value='';document.getElementById('kl-op').value='';
+  document.getElementById('kl-st').value='open';document.getElementById('kl-ow').style.display='none';
+  document.getElementById('ov-kl').classList.add('open');
+}
+
+async function saveKlacht(){
+  const kl=document.getElementById('kl-k').value.trim();
+  const sm=document.getElementById('kl-s').value.trim();
+  const dl=document.getElementById('kl-d').value.trim();
+  const st=document.getElementById('kl-st').value;
+  const op=document.getElementById('kl-op').value.trim();
+  if(!kl||!sm){toast('Vul klantnaam en samenvatting in.');return;}
+  if(st==='opgelost'&&!op){toast('Vul een oplossing in.');return;}
+  const btn=document.getElementById('btn-kl-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
+  try{
+    const body={klant:kl,samenvatting:sm,deal:dl||null,status:st,user_id:me.id};if(op)body.oplossing=op;
+    await api('POST','/rest/v1/klachten?select=*,profielen(naam,email)',body);
+    document.getElementById('ov-kl').classList.remove('open');
+    await loadData();render();toast('Klacht opgeslagen.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+}
+
+function stChg(id,st,kl){
+  if(st==='opgelost'){oplPend={id,kl};document.getElementById('op-t').value='';document.getElementById('ov-op').classList.add('open');}
+  else updKS(id,st,null,kl);
+}
+async function saveOpl(){
+  const t=document.getElementById('op-t').value.trim();if(!t){toast('Vul oplossing in.');return;}
+  const btn=document.getElementById('btn-op-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
+  try{await updKS(oplPend.id,'opgelost',t,oplPend.kl);document.getElementById('ov-op').classList.remove('open');}
+  finally{btn.disabled=false;btn.innerHTML='Opslaan als opgelost';}
+}
+async function updKS(id,st,op,kl){
+  try{const b={status:st,bijgewerkt_op:new Date().toISOString()};if(op)b.oplossing=op;
+    await api('PATCH','/rest/v1/klachten?id=eq.'+id,b);
+    const k=klachten.find(x=>x.id===id);if(k){k.status=st;if(op)k.oplossing=op;}
+    openKlant=kl;render();toast('Bijgewerkt.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}
+}
+async function delKl(id,kl){
+  if(!confirm('Verwijderen?'))return;
+  try{await api('DELETE','/rest/v1/klachten?id=eq.'+id);klachten=klachten.filter(k=>k.id!==id);notities=notities.filter(n=>n.klacht_id!==id);openKlant=klachten.some(k=>k.klant===kl)?kl:null;render();toast('Verwijderd.');}
+  catch(e){toast('Fout: '+e.message,'err');}
+}
+async function addN(kid,kl){
+  const inp=document.getElementById('ni-'+kid);const t=inp.value.trim();if(!t)return;inp.value='';
+  try{const res=await api('POST','/rest/v1/notities',{klacht_id:kid,user_id:me.id,tekst:t});
+    if(res&&res[0]){res[0].profielen={naam:me.naam,email:me.email};notities.push(res[0]);}
+    openKlant=kl;render();toast('Notitie toegevoegd.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}
+}
 init();
 
 </script>

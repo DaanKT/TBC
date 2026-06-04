@@ -158,10 +158,41 @@ function pct(a,b){return b?Math.min(100,Math.round(a/b*100)):0;}
 function nowM(){return new Date().toISOString().slice(0,7);}
 function nowD(){return new Date().toISOString().slice(0,10);}
 function toast(msg,tp=''){const el=document.createElement('div');el.className='toast'+(tp?' '+tp:'');el.textContent=msg;let tw=document.getElementById('tw');if(!tw){tw=document.createElement('div');tw.id='tw';tw.className='tw';document.body.appendChild(tw);}tw.appendChild(el);setTimeout(()=>el.remove(),3500);}
-function esc(s){return String(s).replace(/\/g,'\\').replace(/'/g,"\'");}
-async function checkAuth(){
+function esc(s){return String(s).split("'").join("&apos;");}
+async function refreshSession(){
   const s=getSession();
+  if(!s||!s.refresh_token) return null;
+  try{
+    const res=await fetch(SB+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST',
+      headers:{'apikey':AK,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:s.refresh_token})
+    });
+    if(!res.ok) return null;
+    const data=await res.json();
+    if(data.access_token){
+      localStorage.setItem('tbc_session',JSON.stringify(data));
+      return data;
+    }
+  }catch(e){}
+  return null;
+}
+
+async function checkAuth(){
+  let s=getSession();
   if(!s||!s.access_token){localStorage.clear();location.replace('login.html');return null;}
+  
+  // Check if token is expired or about to expire (within 10 min)
+  try{
+    const payload=JSON.parse(atob(s.access_token.split('.')[1]));
+    const expiresIn=(payload.exp*1000)-Date.now();
+    if(expiresIn<600000){ // less than 10 minutes
+      const newSession=await refreshSession();
+      if(newSession) s=newSession;
+      else if(expiresIn<0){localStorage.clear();location.replace('login.html');return null;}
+    }
+  }catch(e){}
+
   const me=getMe();
   if(me&&me.id)return me;
   try{
@@ -169,6 +200,14 @@ async function checkAuth(){
     if(!p||!p.length)throw new Error('no profile');
     setMe(p[0]);return p[0];
   }catch(e){
+    // Try refresh before giving up
+    const newSession=await refreshSession();
+    if(newSession){
+      try{
+        const p2=await api('GET','/rest/v1/profielen?id=eq.'+s.user.id);
+        if(p2&&p2.length){setMe(p2[0]);return p2[0];}
+      }catch(e2){}
+    }
     localStorage.clear();location.replace('login.html');return null;
   }
 }

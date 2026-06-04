@@ -178,10 +178,41 @@ function pct(a,b){return b?Math.min(100,Math.round(a/b*100)):0;}
 function nowM(){return new Date().toISOString().slice(0,7);}
 function nowD(){return new Date().toISOString().slice(0,10);}
 function toast(msg,tp=''){const el=document.createElement('div');el.className='toast'+(tp?' '+tp:'');el.textContent=msg;let tw=document.getElementById('tw');if(!tw){tw=document.createElement('div');tw.id='tw';tw.className='tw';document.body.appendChild(tw);}tw.appendChild(el);setTimeout(()=>el.remove(),3500);}
-function esc(s){return String(s).replace(/'/g,"&apos;");}
-async function checkAuth(){
+function esc(s){return String(s).split("'").join("&apos;");}
+async function refreshSession(){
   const s=getSession();
+  if(!s||!s.refresh_token) return null;
+  try{
+    const res=await fetch(SB+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST',
+      headers:{'apikey':AK,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:s.refresh_token})
+    });
+    if(!res.ok) return null;
+    const data=await res.json();
+    if(data.access_token){
+      localStorage.setItem('tbc_session',JSON.stringify(data));
+      return data;
+    }
+  }catch(e){}
+  return null;
+}
+
+async function checkAuth(){
+  let s=getSession();
   if(!s||!s.access_token){localStorage.clear();location.replace('login.html');return null;}
+  
+  // Check if token is expired or about to expire (within 10 min)
+  try{
+    const payload=JSON.parse(atob(s.access_token.split('.')[1]));
+    const expiresIn=(payload.exp*1000)-Date.now();
+    if(expiresIn<600000){ // less than 10 minutes
+      const newSession=await refreshSession();
+      if(newSession) s=newSession;
+      else if(expiresIn<0){localStorage.clear();location.replace('login.html');return null;}
+    }
+  }catch(e){}
+
   const me=getMe();
   if(me&&me.id)return me;
   try{
@@ -189,6 +220,14 @@ async function checkAuth(){
     if(!p||!p.length)throw new Error('no profile');
     setMe(p[0]);return p[0];
   }catch(e){
+    // Try refresh before giving up
+    const newSession=await refreshSession();
+    if(newSession){
+      try{
+        const p2=await api('GET','/rest/v1/profielen?id=eq.'+s.user.id);
+        if(p2&&p2.length){setMe(p2[0]);return p2[0];}
+      }catch(e2){}
+    }
     localStorage.clear();location.replace('login.html');return null;
   }
 }
@@ -252,7 +291,7 @@ function renderGebruikers(){
     h+=`<div class="card-row"><div><div class="row-main">${u.naam||u.email}</div><div class="row-sub">${u.email} · ${reg?reg.naam:'Geen regio'}</div></div>
     <div class="row-right">
       <span class="badge ${u.rol==='admin'?'b-admin':'b-user'}">${u.rol}</span>
-      <button class="sm" onclick="openEditU('${u.id}','${esc(u.naam||'')}','${esc(u.email)}','${u.rol}','${u.regio_id||''}')">✏️</button>
+      <button class="sm" onclick="openEditU(this)" data-id="${u.id}" data-naam="${esc(u.naam||u.email)}" data-email="${esc(u.email)}" data-rol="${u.rol}" data-regio="${u.regio_id||''}">✏️</button>
     </div></div>`;
   });
   h+=`</div>`;
@@ -266,7 +305,7 @@ function renderRegios(){
   regios.forEach(r=>{
     const leden=profielen.filter(u=>u.regio_id===r.id);
     h+=`<div class="card-row"><div><div class="row-main">${r.naam}</div><div class="row-sub">${leden.map(u=>u.naam||u.email).join(', ')||'Geen leden'}</div></div>
-    <div class="row-right"><button class="sm" onclick="openRM(${r.id},'${esc(r.naam)}')">✏️</button><button class="sm danger" onclick="delRg(${r.id})">🗑</button></div></div>`;
+    <div class="row-right"><button class="sm" onclick="openRM(this)" data-id="${r.id}" data-naam="${esc(r.naam)}">✏️</button><button class="sm danger" onclick="delRg(${r.id})">🗑</button></div></div>`;
   });
   h+=`</div>`;
   return h;

@@ -3,633 +3,565 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dashboard — The Branding Club</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<title>TBC Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --navy: #0B1F3A; --navy-light: #1E3A5F; --teal: #4FD1A5;
-    --bg: #f4f5f7; --card: #ffffff; --border: #e2e5ea;
-    --text: #1a1f2e; --muted: #6b7280; --radius: 10px; --radius-sm: 6px;
-  }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-  header { background: var(--navy); padding: 0 1.5rem; height: 58px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
-  .logo { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.05em; text-transform: uppercase; }
-  .logo span { color: var(--teal); }
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .user-chip { font-size: 12px; color: rgba(255,255,255,0.55); display:flex; align-items:center; gap:6px; }
-  .admin-badge { font-size: 10px; background: var(--teal); color: var(--navy); padding: 2px 7px; border-radius: 99px; font-weight: 700; }
-  .btn-logout { font-family: 'DM Sans', sans-serif; font-size: 12px; background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; }
-  .btn-logout:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
-  main { max-width: 920px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
-  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
-  .stat { background: var(--card); border: 2px solid var(--border); border-radius: var(--radius); padding: 14px 16px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
-  .stat:hover { border-color: #c5cad4; }
-  .stat.active-filter { border-color: var(--teal); background: #f0fdf4; }
-  .stat-num { font-size: 24px; font-weight: 700; line-height: 1; }
-  .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .n-total { color: var(--text); } .n-open { color: #dc2626; } .n-beh { color: #d97706; } .n-opl { color: #16a34a; }
-  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
-  .toolbar-left { font-size: 13px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-  .toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; }
-  button { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--card); color: var(--text); padding: 7px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.12s; }
-  button:hover { background: #f0f2f5; }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
-  button.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
-  button.primary:hover { background: var(--navy-light); }
-  button.teal { background: var(--teal); color: var(--navy); border-color: var(--teal); font-weight: 600; }
-  button.teal:hover { background: #3fbf95; }
-  button.danger { color: #dc2626; border-color: #fecaca; }
-  button.danger:hover { background: #fef2f2; }
-  button.small { font-size: 12px; padding: 5px 10px; }
-  button.amber { background: #fffbeb; color: #92400e; border-color: #fde68a; }
-  button.amber:hover { background: #fef3c7; }
-  .list-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .section-header { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 18px 8px; background: #f8f9fb; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
-  .klant-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; user-select: none; }
-  .klant-row:hover { background: #f8f9fb; }
-  .klant-row.active { background: #f0fdf4; border-left: 3px solid var(--teal); padding-left: 15px; }
-  .klant-name { font-size: 14px; font-weight: 600; }
-  .klant-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .klant-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-  .badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
-  .b-open { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-  .b-behandeling { background: #fffbeb; color: #92400e; border-color: #fde68a; }
-  .b-wacht { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
-  .b-opgelost { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
-  .chevron { font-size: 11px; color: var(--muted); transition: transform 0.2s; }
-  .chevron.open { transform: rotate(180deg); }
-  .detail-panel { background: #f8f9fb; border-bottom: 1px solid var(--border); max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
-  .detail-panel.open { max-height: 3000px; }
-  .detail-inner { padding: 16px 18px; }
-  .klacht-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 12px; }
-  .kc-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-  .kc-deal { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
-  .kc-datum { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
-  .kc-samen { font-size: 13px; color: var(--text); line-height: 1.55; margin-bottom: 10px; }
-  .kc-oplossing { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; color: #166534; margin-bottom: 10px; }
-  .kc-oplossing strong { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; color: #16a34a; }
-  .kc-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-  select { font-family: 'DM Sans', sans-serif; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--card); color: var(--text); padding: 5px 8px; cursor: pointer; outline: none; }
-  .notities-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
-  .notitie-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-  .notitie-item { display: flex; gap: 10px; margin-bottom: 8px; }
-  .notitie-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); flex-shrink: 0; margin-top: 5px; }
-  .notitie-tekst { font-size: 13px; color: var(--text); line-height: 1.5; }
-  .notitie-meta { font-size: 11px; color: var(--muted); margin-top: 1px; font-family: 'DM Mono', monospace; }
-  .notitie-row { display: flex; gap: 8px; margin-top: 10px; }
-  .notitie-row input { font-family: 'DM Sans', sans-serif; font-size: 13px; flex: 1; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 10px; outline: none; color: var(--text); background: var(--card); }
-  .notitie-row input:focus { border-color: var(--teal); }
-  .detail-footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
-  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 14px; }
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(11,31,58,0.55); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
-  .overlay.open { display: flex; }
-  .modal { background: var(--card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 500px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
-  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
-  .field { margin-bottom: 14px; }
-  label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
-  input[type=text], input[type=email], input[type=password], textarea { font-family: 'DM Sans', sans-serif; font-size: 14px; width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text); background: var(--card); outline: none; transition: border-color 0.15s; }
-  input:focus, textarea:focus { border-color: var(--teal); }
-  textarea { resize: vertical; min-height: 80px; }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
-  .tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; width: fit-content; }
-  .tab { font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: calc(var(--radius) - 2px); border: none; background: none; color: var(--muted); cursor: pointer; transition: background 0.12s; }
-  .tab.active { background: var(--navy); color: #fff; }
-  .user-table { width: 100%; border-collapse: collapse; }
-  .user-table th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border); }
-  .user-table td { font-size: 13px; padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-  .user-table tr:last-child td { border-bottom: none; }
-  .user-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-  .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 6px; }
-  .toast { background: var(--navy); color: #fff; font-size: 13px; padding: 10px 16px; border-radius: var(--radius-sm); animation: tin .2s ease; max-width: 340px; }
-  .toast.err { background: #dc2626; }
-  .toast.ok { background: #16a34a; }
-  @keyframes tin { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-  .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
-  .loader.dark { border-color: rgba(0,0,0,0.15); border-top-color: var(--navy); }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @media (max-width: 520px) { .stats-row { grid-template-columns: 1fr 1fr; } .row2 { grid-template-columns: 1fr; } .tabs { width: 100%; } }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0B1F3A;--navy-light:#1E3A5F;--teal:#4FD1A5;--teal-dim:#3ab891;--bg:#f0f2f5;--card:#ffffff;--border:#e2e5ea;--text:#1a1f2e;--muted:#6b7280;--red:#dc2626;--amber:#d97706;--green:#16a34a;--blue:#2563eb;--sidebar:220px;--r:10px;--rs:6px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+.sidebar{width:var(--sidebar);background:var(--navy);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:40}
+.sb-logo{padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sb-logo .t{font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.06em}
+.sb-logo .t span{color:var(--teal)}
+.sb-logo .s{font-size:11px;color:rgba(255,255,255,.35);margin-top:2px}
+.nav{flex:1;padding:10px 0;overflow-y:auto}
+.nav-sec{font-size:10px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.08em;padding:10px 20px 4px}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);cursor:pointer;transition:background .12s,color .12s;border:none;background:none;width:100%;text-align:left}
+.ni:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.9)}
+.ni.active{background:rgba(79,209,165,.12);color:var(--teal);border-left:3px solid var(--teal);padding-left:17px}
+.ni .ic{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.nb{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px}
+.sb-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,.07)}
+.sb-user .n{font-size:13px;font-weight:500;color:rgba(255,255,255,.8)}
+.sb-user .r{font-size:11px;color:rgba(255,255,255,.35);margin-top:1px}
+.btn-lo{font-family:'DM Sans',sans-serif;font-size:11px;background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.45);padding:4px 10px;border-radius:var(--rs);cursor:pointer;margin-top:8px}
+.btn-lo:hover{color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.3)}
+.main{margin-left:var(--sidebar);flex:1;min-height:100vh}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 1.5rem;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:30}
+.page-title{font-size:16px;font-weight:600}
+.content{padding:1.5rem;max-width:1000px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
+.sc.click{cursor:pointer;transition:border-color .15s}
+.sc.click:hover{border-color:#b0b8c4}
+.sc.act{border-color:var(--teal);background:#f0fdf9}
+.sv{font-size:26px;font-weight:700;line-height:1}
+.sl{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+.ss{font-size:12px;color:var(--muted);margin-top:6px}
+.cr{color:var(--red)}.ca{color:var(--amber)}.cg{color:var(--green)}.cb{color:var(--blue)}.cn{color:var(--navy)}
+button{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:var(--rs);border:1px solid var(--border);background:var(--card);color:var(--text);padding:7px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .12s}
+button:hover{background:#f0f2f5}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+button.primary:hover{background:var(--navy-light)}
+button.teal{background:var(--teal);color:var(--navy);border-color:var(--teal);font-weight:600}
+button.teal:hover{background:var(--teal-dim)}
+button.danger{color:var(--red);border-color:#fecaca}
+button.danger:hover{background:#fef2f2}
+button.amber{background:#fffbeb;color:#92400e;border-color:#fde68a}
+button.sm{font-size:12px;padding:5px 10px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
+.tl{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.lc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:1.5rem}
+.sh{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:10px 18px;background:#f8f9fb;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ri{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);transition:background .1s}
+.ri:last-child{border-bottom:none}
+.ri:hover{background:#f8f9fb}
+.ri.click{cursor:pointer}
+.ri.act{background:#f0fdf9;border-left:3px solid var(--teal);padding-left:15px}
+.rm{font-size:14px;font-weight:600}
+.rs{font-size:12px;color:var(--muted);margin-top:2px}
+.rr{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.dp{background:#f8f9fb;border-bottom:1px solid var(--border);max-height:0;overflow:hidden;transition:max-height .3s ease}
+.dp.open{max-height:2000px}
+.di{padding:16px 18px}
+.badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;border:1px solid;white-space:nowrap}
+.b-open{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+.b-behandeling{background:#fffbeb;color:#92400e;border-color:#fde68a}
+.b-wacht{background:#eff6ff;color:#1e40af;border-color:#bfdbfe}
+.b-opgelost{background:#f0fdf4;color:#166534;border-color:#bbf7d0}
+.b-admin{background:rgba(79,209,165,.15);color:#0d6e52;border-color:var(--teal)}
+.b-user{background:#f0f4ff;color:#3730a3;border-color:#c7d2fe}
+.b-gehaald{background:#f0fdf4;color:#166534;border-color:#bbf7d0}
+.b-gemist{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+.b-open2{background:#fffbeb;color:#92400e;border-color:#fde68a}
+.b-regio{background:#f0f9ff;color:#0369a1;border-color:#bae6fd}
+.overlay{display:none;position:fixed;inset:0;background:rgba(11,31,58,.55);z-index:100;align-items:center;justify-content:center;padding:1rem}
+.overlay.open{display:flex}
+.modal{background:var(--card);border-radius:var(--r);padding:24px;width:100%;max-width:520px;border:1px solid var(--border);max-height:92vh;overflow-y:auto}
+.mlg{max-width:640px}
+.mt{font-size:16px;font-weight:700;margin-bottom:4px}
+.ms{font-size:13px;color:var(--muted);margin-bottom:18px}
+.field{margin-bottom:14px}
+label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],input[type=month],textarea,select{font-family:'DM Sans',sans-serif;font-size:14px;width:100%;border:1px solid var(--border);border-radius:var(--rs);padding:9px 12px;color:var(--text);background:var(--card);outline:none;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--teal)}
+textarea{resize:vertical;min-height:75px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.mf{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+.kc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.kt{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.kr{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.kr:last-child{border-bottom:none}
+.pb{height:6px;background:var(--border);border-radius:99px;margin-top:6px;overflow:hidden}
+.pf{height:100%;border-radius:99px;background:var(--teal);transition:width .4s ease}
+.pf.am{background:var(--amber)}
+.pf.re{background:var(--red)}
+.dt{width:100%;border-collapse:collapse}
+.dt th{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:10px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.dt td{font-size:13px;padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.nrow{display:flex;gap:8px;margin-top:8px}
+.nrow input{font-size:13px;flex:1;padding:6px 10px}
+.ni-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:5px}
+.tw{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:6px}
+.toast{background:var(--navy);color:#fff;font-size:13px;padding:10px 16px;border-radius:var(--rs);animation:tin .2s ease;max-width:340px}
+.toast.err{background:var(--red)}
+.toast.ok{background:var(--green)}
+@keyframes tin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ld{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+.ld.dk{border-color:rgba(0,0,0,.1);border-top-color:var(--navy)}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:14px}
+.chev{font-size:11px;color:var(--muted);transition:transform .2s}
+.chev.open{transform:rotate(180deg)}
+select.inl{width:auto;padding:5px 8px;font-size:12px}
+.alert{border-radius:var(--r);padding:14px 18px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.alert.warn{background:#fffbeb;border:1px solid #fde68a}
+@media(max-width:700px){
+  .sidebar{width:60px}
+  .sb-logo .t,.sb-logo .s,.ni span,.nav-sec,.sb-user .n,.sb-user .r,.btn-lo{display:none}
+  .ni{justify-content:center;padding:12px}
+  .main{margin-left:60px}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .kgrid{grid-template-columns:1fr}
+  .r2{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
-
-<header>
-  <div class="logo">The Branding <span>Club</span></div>
-  <div class="header-right">
-    <span class="user-chip" id="user-chip">laden...</span>
-    <button class="btn-logout" onclick="logout()">Uitloggen</button>
+<nav class="sidebar">
+  <div class="sb-logo"><div class="t">The Branding <span>Club</span></div><div class="s">Sales Platform</div></div>
+  <div class="nav">
+    <div class="nav-sec">Overzicht</div>
+    <button class="ni active" onclick="nav('dashboard')"><span class="ic">📊</span><span>Dashboard</span></button>
+    <button class="ni" onclick="nav('commitments')"><span class="ic">🎯</span><span>Commitments</span><span class="nb" id="nb-c" style="display:none">!</span></button>
+    <button class="ni" onclick="nav('kpi')"><span class="ic">📈</span><span>KPI's</span></button>
+    <div class="nav-sec" id="nav-admin" style="display:none">Beheer</div>
+    <button class="ni" id="nav-k" onclick="nav('klachten')" style="display:none"><span class="ic">⚠️</span><span>Klachten</span></button>
+    <button class="ni" id="nav-r" onclick="nav('regios')" style="display:none"><span class="ic">🗺️</span><span>Regio's</span></button>
+    <button class="ni" id="nav-t" onclick="nav('targets')" style="display:none"><span class="ic">🏆</span><span>Targets</span></button>
+    <button class="ni" id="nav-u" onclick="nav('gebruikers')" style="display:none"><span class="ic">👥</span><span>Gebruikers</span></button>
   </div>
-</header>
-
-<main>
-  <div class="tabs" id="tabs" style="display:none">
-    <button class="tab active" onclick="switchTab('klachten')">Klachten</button>
-    <button class="tab" onclick="switchTab('gebruikers')">Gebruikers</button>
+  <div class="sb-user">
+    <div class="n" id="sb-naam">—</div>
+    <div class="r" id="sb-rol">—</div>
+    <button class="btn-lo" onclick="logout()">Uitloggen</button>
   </div>
-
-  <!-- Klachten view -->
-  <div id="view-klachten">
-    <div class="stats-row">
-      <div class="stat active-filter" id="stat-all" onclick="setFilter('all')"><div class="stat-num n-total" id="s-total">—</div><div class="stat-label">Totaal</div></div>
-      <div class="stat" id="stat-open" onclick="setFilter('open')"><div class="stat-num n-open" id="s-open">—</div><div class="stat-label">Open</div></div>
-      <div class="stat" id="stat-behandeling" onclick="setFilter('behandeling')"><div class="stat-num n-beh" id="s-behandeling">—</div><div class="stat-label">In behandeling</div></div>
-      <div class="stat" id="stat-opgelost" onclick="setFilter('opgelost')"><div class="stat-num n-opl" id="s-opgelost">—</div><div class="stat-label">Opgelost</div></div>
-    </div>
-    <div class="toolbar">
-      <span class="toolbar-left" id="toolbar-label">Klachten</span>
-      <div class="toolbar-right">
-        <button id="btn-export" style="display:none" onclick="mailOpen()">&#9993; Mail open klachten</button>
-        <button class="teal" onclick="openKlachtModal()">+ Nieuwe klacht</button>
-      </div>
-    </div>
-    <div class="list-card" id="list-card"><div class="empty-state"><span class="loader dark"></span><br><br>Laden...</div></div>
-  </div>
-
-  <!-- Gebruikers view -->
-  <div id="view-gebruikers" style="display:none">
-    <div class="toolbar">
-      <span class="toolbar-left">Gebruikers</span>
-      <div class="toolbar-right">
-        <button class="teal" onclick="openUserModal()">+ Nieuwe gebruiker</button>
-      </div>
-    </div>
-    <div class="list-card">
-      <table class="user-table">
-        <thead><tr><th>Naam</th><th>E-mail</th><th>Rol</th><th>Klachten</th><th>Acties</th></tr></thead>
-        <tbody id="user-tbody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem"><span class="loader dark"></span></td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</main>
-
-<!-- Klacht modal -->
-<div class="overlay" id="klacht-overlay" onclick="closeOvl('klacht-overlay',event)">
-  <div class="modal">
-    <div class="modal-title">Nieuwe klacht</div>
-    <div class="modal-sub">Vul de klachtdetails in.</div>
-    <div class="row2">
-      <div class="field"><label>Klantnaam *</label><input type="text" id="f-klant" placeholder="bijv. De Wildse Hut" /></div>
-      <div class="field"><label>Deal nummer</label><input type="text" id="f-deal" placeholder="optioneel" /></div>
-    </div>
-    <div class="field"><label>Samenvatting *</label><textarea id="f-samen" placeholder="Beschrijf de klacht concreet..."></textarea></div>
-    <div class="field"><label>Status</label>
-      <select id="f-status" style="width:100%;padding:9px 12px;font-size:14px;" onchange="toggleOplF()">
-        <option value="open">Open</option>
-        <option value="behandeling">In behandeling</option>
-        <option value="wacht">Wacht op klant</option>
-        <option value="opgelost">Opgelost</option>
-      </select>
-    </div>
-    <div class="field" id="f-opl-wrap" style="display:none"><label>Oplossing *</label><textarea id="f-oplossing" placeholder="Hoe is dit opgelost?"></textarea></div>
-    <div class="modal-footer">
-      <button onclick="closeOvl('klacht-overlay')">Annuleren</button>
-      <button class="teal" id="btn-klacht-save" onclick="saveKlacht()">Opslaan</button>
-    </div>
-  </div>
+</nav>
+<div class="main">
+  <div class="topbar"><div class="page-title" id="page-title">Dashboard</div><div id="tbr"></div></div>
+  <div class="content" id="content"><div class="empty"><span class="ld dk"></span><br><br>Laden...</div></div>
 </div>
 
-<!-- Oplossing modal -->
-<div class="overlay" id="opl-overlay" onclick="closeOvl('opl-overlay',event)">
-  <div class="modal">
-    <div class="modal-title">Klacht oplossen</div>
-    <div class="modal-sub">Beschrijf hoe de klacht is opgelost.</div>
-    <div class="field"><label>Oplossing *</label><textarea id="opl-tekst" placeholder="Beschrijf hoe dit is opgelost..."></textarea></div>
-    <div class="modal-footer">
-      <button onclick="closeOvl('opl-overlay')">Annuleren</button>
-      <button class="teal" id="btn-opl-save" onclick="saveOplossing()">Opslaan als opgelost</button>
-    </div>
-  </div>
-</div>
+<!-- MODALS -->
+<div class="overlay" id="ov-c" onclick="co('ov-c',event)">
+<div class="modal mlg"><div class="mt">Commitment invoeren</div><div class="ms">Wat ga jij morgen realiseren?</div>
+<div class="r2"><div class="field"><label>Datum *</label><input type="date" id="c-d"/></div><div class="field"><label>Omzet forecast (€) *</label><input type="number" id="c-o" placeholder="2500" min="0" step="100"/></div></div>
+<div class="divider"></div>
+<div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Optionele extra velden</div>
+<div class="r3"><div class="field"><label>Label 1</label><input type="text" id="c-e1l" placeholder="bijv. Afspraken"/></div><div class="field"><label>Forecast 1</label><input type="text" id="c-e1f" placeholder="3"/></div><div class="field"><label>Actuals 1</label><input type="text" id="c-e1a" placeholder="achteraf"/></div></div>
+<div class="r3"><div class="field"><label>Label 2</label><input type="text" id="c-e2l" placeholder="bijv. Calls"/></div><div class="field"><label>Forecast 2</label><input type="text" id="c-e2f" placeholder="20"/></div><div class="field"><label>Actuals 2</label><input type="text" id="c-e2a" placeholder="achteraf"/></div></div>
+<div class="r3"><div class="field"><label>Label 3</label><input type="text" id="c-e3l" placeholder="bijv. Klanten"/></div><div class="field"><label>Forecast 3</label><input type="text" id="c-e3f" placeholder="1"/></div><div class="field"><label>Actuals 3</label><input type="text" id="c-e3a" placeholder="achteraf"/></div></div>
+<div class="mf"><button onclick="co('ov-c')">Annuleren</button><button class="teal" id="btn-cs" onclick="saveCommit()">Opslaan</button></div>
+</div></div>
 
-<!-- Nieuwe gebruiker modal -->
-<div class="overlay" id="user-overlay" onclick="closeOvl('user-overlay',event)">
-  <div class="modal">
-    <div class="modal-title">Nieuwe gebruiker aanmaken</div>
-    <div class="modal-sub">De gebruiker kan direct inloggen. Deel het wachtwoord zelf.</div>
-    <div class="field"><label>Naam *</label><input type="text" id="u-naam" placeholder="Volledige naam" /></div>
-    <div class="field"><label>E-mailadres *</label><input type="email" id="u-email" placeholder="naam@thebrandingclub.com" /></div>
-    <div class="field"><label>Wachtwoord *</label><input type="password" id="u-pass" placeholder="minimaal 6 tekens" /></div>
-    <div class="modal-footer">
-      <button onclick="closeOvl('user-overlay')">Annuleren</button>
-      <button class="teal" id="btn-user-save" onclick="saveUser()">Aanmaken</button>
-    </div>
-  </div>
-</div>
+<div class="overlay" id="ov-b" onclick="co('ov-b',event)">
+<div class="modal"><div class="mt">Commitment bevestigen</div><div class="ms" id="b-sub">Wat heb je gerealiseerd?</div>
+<div class="field"><label>Werkelijke omzet (€) *</label><input type="number" id="b-o" placeholder="0" min="0" step="100"/></div>
+<div class="field" id="b-e1w" style="display:none"><label id="b-e1l">Extra 1</label><input type="text" id="b-e1a"/></div>
+<div class="field" id="b-e2w" style="display:none"><label id="b-e2l">Extra 2</label><input type="text" id="b-e2a"/></div>
+<div class="field" id="b-e3w" style="display:none"><label id="b-e3l">Extra 3</label><input type="text" id="b-e3a"/></div>
+<div class="mf"><button onclick="co('ov-b')">Annuleren</button><button class="teal" id="btn-bs" onclick="saveBev()">Bevestigen</button></div>
+</div></div>
 
-<!-- Wachtwoord resetten modal -->
-<div class="overlay" id="reset-overlay" onclick="closeOvl('reset-overlay',event)">
-  <div class="modal">
-    <div class="modal-title" id="reset-title">Wachtwoord resetten</div>
-    <div class="modal-sub" id="reset-sub">Stel een nieuw wachtwoord in voor deze gebruiker.</div>
-    <div class="field"><label>Nieuw wachtwoord *</label><input type="password" id="r-pass" placeholder="minimaal 6 tekens" /></div>
-    <div class="field"><label>Bevestig wachtwoord *</label><input type="password" id="r-pass2" placeholder="herhaal wachtwoord" /></div>
-    <div class="modal-footer">
-      <button onclick="closeOvl('reset-overlay')">Annuleren</button>
-      <button class="teal" id="btn-reset-save" onclick="saveReset()">Opslaan</button>
-    </div>
-  </div>
-</div>
+<div class="overlay" id="ov-kl" onclick="co('ov-kl',event)">
+<div class="modal"><div class="mt">Nieuwe klacht</div>
+<div class="r2"><div class="field"><label>Klantnaam *</label><input type="text" id="kl-k" placeholder="bijv. De Wildse Hut"/></div><div class="field"><label>Deal</label><input type="text" id="kl-d" placeholder="optioneel"/></div></div>
+<div class="field"><label>Samenvatting *</label><textarea id="kl-s"></textarea></div>
+<div class="field"><label>Status</label><select id="kl-st" onchange="togKO()"><option value="open">Open</option><option value="behandeling">In behandeling</option><option value="wacht">Wacht op klant</option><option value="opgelost">Opgelost</option></select></div>
+<div class="field" id="kl-ow" style="display:none"><label>Oplossing *</label><textarea id="kl-op"></textarea></div>
+<div class="mf"><button onclick="co('ov-kl')">Annuleren</button><button class="teal" id="btn-kls" onclick="saveKlacht()">Opslaan</button></div>
+</div></div>
 
-<div class="toast-wrap" id="toasts"></div>
+<div class="overlay" id="ov-op" onclick="co('ov-op',event)">
+<div class="modal"><div class="mt">Klacht oplossen</div>
+<div class="field"><label>Oplossing *</label><textarea id="op-t"></textarea></div>
+<div class="mf"><button onclick="co('ov-op')">Annuleren</button><button class="teal" id="btn-ops" onclick="saveOpl()">Opslaan als opgelost</button></div>
+</div></div>
+
+<div class="overlay" id="ov-rg" onclick="co('ov-rg',event)">
+<div class="modal"><div class="mt" id="rg-mt">Regio aanmaken</div>
+<div class="field"><label>Naam *</label><input type="text" id="rg-n" placeholder="bijv. Noord-Holland"/></div>
+<div class="mf"><button onclick="co('ov-rg')">Annuleren</button><button class="teal" id="btn-rgs" onclick="saveRegio()">Opslaan</button></div>
+</div></div>
+
+<div class="overlay" id="ov-tg" onclick="co('ov-tg',event)">
+<div class="modal"><div class="mt">Target instellen</div><div class="ms">Maandtarget voor regio of persoon.</div>
+<div class="field"><label>Type</label><select id="tg-tp" onchange="togTT()"><option value="regio">Regio</option><option value="persoon">Persoon</option></select></div>
+<div class="field" id="tg-rw"><label>Regio</label><select id="tg-r"></select></div>
+<div class="field" id="tg-uw" style="display:none"><label>Persoon</label><select id="tg-u"></select></div>
+<div class="field"><label>Periode *</label><input type="month" id="tg-p"/></div>
+<div class="field"><label>Target (€) *</label><input type="number" id="tg-o" placeholder="50000" min="0" step="1000"/></div>
+<div class="mf"><button onclick="co('ov-tg')">Annuleren</button><button class="teal" id="btn-tgs" onclick="saveTarget()">Opslaan</button></div>
+</div></div>
+
+<div class="overlay" id="ov-us" onclick="co('ov-us',event)">
+<div class="modal"><div class="mt">Nieuwe gebruiker</div>
+<div class="field"><label>Naam *</label><input type="text" id="us-n"/></div>
+<div class="field"><label>E-mail *</label><input type="email" id="us-e"/></div>
+<div class="field"><label>Wachtwoord *</label><input type="password" id="us-p"/></div>
+<div class="field"><label>Regio</label><select id="us-r"><option value="">— Geen —</option></select></div>
+<div class="mf"><button onclick="co('ov-us')">Annuleren</button><button class="teal" id="btn-uss" onclick="saveUser()">Aanmaken</button></div>
+</div></div>
+
+<div class="overlay" id="ov-rs" onclick="co('ov-rs',event)">
+<div class="modal"><div class="mt" id="rs-t">Wachtwoord resetten</div>
+<div class="field"><label>Nieuw wachtwoord *</label><input type="password" id="rs-p"/></div>
+<div class="field"><label>Bevestig *</label><input type="password" id="rs-p2"/></div>
+<div class="mf"><button onclick="co('ov-rs')">Annuleren</button><button class="teal" id="btn-rss" onclick="saveReset()">Opslaan</button></div>
+</div></div>
+
+<div class="tw" id="tw"></div>
 
 <script>
-const SB = 'https://bstpobqvodljhpjzgnkp.supabase.co';
-const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
-const SVC = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDUzMTI4MCwiZXhwIjoyMDk2MTA3MjgwfQ.2Nrgk7-TxZ-gIAFYhjcfNTFdm6g-6HaGIu3QGCEckPs';
+const SB='https://bstpobqvodljhpjzgnkp.supabase.co';
+const AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDUzMTI4MCwiZXhwIjoyMDk2MTA3MjgwfQ.2Nrgk7-TxZ-gIAFYhjcfNTFdm6g-6HaGIu3QGCEckPs';
+let sess=null,me=null,Kl=[],Nots=[],Profielen=[],Regios=[],Targets=[],Commits=[];
+let openK=null,kFilter='all',oplPend=null,bevPend=null,resetUID=null,editRegioId=null;
+const SM={open:{l:'Open',c:'b-open'},behandeling:{l:'In behandeling',c:'b-behandeling'},wacht:{l:'Wacht op klant',c:'b-wacht'},opgelost:{l:'Opgelost',c:'b-opgelost'}};
+function hdr(svc=false){const t=svc?SK:sess.access_token;return{'apikey':AK,'Authorization':'Bearer '+t,'Content-Type':'application/json','Prefer':'return=representation'};}
+async function api(m,p,b,svc=false){const r=await fetch(SB+p,{method:m,headers:hdr(svc),body:b?JSON.stringify(b):undefined});const t=await r.text();if(!r.ok)throw new Error(t);return t?JSON.parse(t):null;}
+async function aApi(m,p,b,svc=false){const tk=svc?SK:sess.access_token;const r=await fetch(SB+p,{method:m,headers:{'apikey':AK,'Authorization':'Bearer '+tk,'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});const t=await r.text();if(!r.ok)throw new Error(t);return t?JSON.parse(t):null;}
+function toast(msg,tp=''){const e=document.createElement('div');e.className='toast'+(tp?' '+tp:'');e.textContent=msg;document.getElementById('tw').appendChild(e);setTimeout(()=>e.remove(),3500);}
+function logout(){localStorage.removeItem('tbc_session');location.href='login.html';}
+function co(id,e){if(!e||e.target.classList.contains('overlay'))document.getElementById(id).classList.remove('open');}
+function v(id){return(document.getElementById(id)?.value||'').trim();}
+function eur(n){return'\u20ac'+Number(n||0).toLocaleString('nl-NL',{minimumFractionDigits:0,maximumFractionDigits:0});}
+function dt(d){return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',month:'short',year:'numeric'});}
+function pct(a,b){return b?Math.min(100,Math.round(a/b*100)):0;}
+function nowM(){return new Date().toISOString().slice(0,7);}
+function nowD(){return new Date().toISOString().slice(0,10);}
+function esc(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 
-let session=null, profiel=null, allKlachten=[], allNotities=[], allProfielen=[];
-let openKlant=null, activeFilter='all', pendingOpl=null, activeTab='klachten', resetUserId=null;
-
-const SM = {
-  open:{label:'Open',cls:'b-open'},
-  behandeling:{label:'In behandeling',cls:'b-behandeling'},
-  wacht:{label:'Wacht op klant',cls:'b-wacht'},
-  opgelost:{label:'Opgelost',cls:'b-opgelost'}
-};
-
-function hdr(svc=false) {
-  const token = svc ? SVC : session.access_token;
-  return {'apikey':KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=representation'};
-}
-
-async function api(method, path, body, svc=false) {
-  const res = await fetch(SB+path, {method, headers:hdr(svc), body:body?JSON.stringify(body):undefined});
-  const t = await res.text();
-  if(!res.ok) throw new Error(t);
-  return t?JSON.parse(t):null;
-}
-
-async function authApi(method, path, body, svc=false) {
-  const token = svc ? SVC : session.access_token;
-  const res = await fetch(SB+path, {
-    method,
-    headers:{'apikey':KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-    body:body?JSON.stringify(body):undefined
-  });
-  const t = await res.text();
-  if(!res.ok) throw new Error(t);
-  return t?JSON.parse(t):null;
-}
-
-function toast(msg, type='') {
-  const el=document.createElement('div');
-  el.className='toast'+(type?' '+type:'');
-  el.textContent=msg;
-  document.getElementById('toasts').appendChild(el);
-  setTimeout(()=>el.remove(),3500);
-}
-
-function logout() { localStorage.removeItem('tbc_session'); location.href='login.html'; }
-
-function closeOvl(id, e) {
-  if(!e||e.target.classList.contains('overlay')) document.getElementById(id).classList.remove('open');
-}
-
-function toggleOplF() {
-  document.getElementById('f-opl-wrap').style.display = document.getElementById('f-status').value==='opgelost'?'block':'none';
-}
-
-function switchTab(tab) {
-  activeTab=tab;
-  document.getElementById('view-klachten').style.display=tab==='klachten'?'block':'none';
-  document.getElementById('view-gebruikers').style.display=tab==='gebruikers'?'block':'none';
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='klachten'?0:1)));
-  if(tab==='gebruikers') renderUsers();
-}
-
-async function init() {
+async function init(){
   const raw=localStorage.getItem('tbc_session');
   if(!raw){location.href='login.html';return;}
-  try{session=JSON.parse(raw);}catch(e){location.href='login.html';return;}
-  try {
-    const p=await api('GET','/rest/v1/profielen?id=eq.'+session.user.id);
-    if(!p||!p.length) throw new Error('geen profiel');
-    profiel=p[0];
-    const chip=document.getElementById('user-chip');
-    chip.innerHTML=(profiel.naam||profiel.email)+(profiel.rol==='admin'?'<span class="admin-badge">Admin</span>':'');
-    if(profiel.rol==='admin'){
-      document.getElementById('tabs').style.display='flex';
-      document.getElementById('btn-export').style.display='inline-flex';
+  try{sess=JSON.parse(raw);}catch(e){location.href='login.html';return;}
+  try{
+    const p=await api('GET','/rest/v1/profielen?id=eq.'+sess.user.id);
+    if(!p||!p.length)throw new Error('no profile');
+    me=p[0];
+    document.getElementById('sb-naam').textContent=me.naam||me.email;
+    document.getElementById('sb-rol').textContent=me.rol==='admin'?'Administrator':'Salesmedewerker';
+    if(me.rol==='admin'){
+      ['nav-admin','nav-k','nav-r','nav-t','nav-u'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=id==='nav-admin'?'block':'flex';});
     }
     await loadAll();
-  } catch(e) {
-    toast('Sessie verlopen, opnieuw inloggen.','err');
+    nav('dashboard');
+  }catch(e){
+    toast('Sessie verlopen.','err');
     setTimeout(()=>{localStorage.removeItem('tbc_session');location.href='login.html';},1800);
   }
 }
 
-async function loadAll() {
-  const isAdmin=profiel.rol==='admin';
-  const kUrl=isAdmin
-    ?'/rest/v1/klachten?order=aangemaakt_op.asc&select=*,profielen(naam,email)'
-    :'/rest/v1/klachten?user_id=eq.'+profiel.id+'&order=aangemaakt_op.asc';
-  allKlachten=await api('GET',kUrl)||[];
-  const ids=allKlachten.map(k=>k.id);
-  if(ids.length){
-    allNotities=await api('GET','/rest/v1/notities?klacht_id=in.('+ids.join(',')+')&order=aangemaakt_op.asc&select=*,profielen(naam,email)')||[];
-  } else { allNotities=[]; }
-  if(isAdmin) allProfielen=await api('GET','/rest/v1/profielen')||[];
-  render();
+async function loadAll(){
+  const isA=me.rol==='admin';
+  Regios=await api('GET','/rest/v1/regios?order=naam.asc')||[];
+  Targets=await api('GET','/rest/v1/targets?order=periode.desc')||[];
+  const ku=isA?'/rest/v1/klachten?order=aangemaakt_op.asc&select=*,profielen(naam,email)':'/rest/v1/klachten?user_id=eq.'+me.id+'&order=aangemaakt_op.asc';
+  Kl=await api('GET',ku)||[];
+  const ids=Kl.map(k=>k.id);
+  Nots=ids.length?await api('GET','/rest/v1/notities?klacht_id=in.('+ids.join(',')+')&order=aangemaakt_op.asc&select=*,profielen(naam,email)')||[]:[];
+  const cu=isA?'/rest/v1/commitments?order=datum.desc&select=*,profielen(naam,email,regio_id)':'/rest/v1/commitments?user_id=eq.'+me.id+'&order=datum.desc';
+  Commits=await api('GET',cu)||[];
+  if(isA)Profielen=await api('GET','/rest/v1/profielen')||[];
+  const unc=Commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<nowD());
+  const nb=document.getElementById('nb-c');
+  if(nb)nb.style.display=unc.length?'inline':'none';
 }
 
-function setFilter(f) {
-  activeFilter=f; openKlant=null;
-  ['all','open','behandeling','opgelost'].forEach(k=>document.getElementById('stat-'+k).classList.toggle('active-filter',k===f));
-  render();
+function nav(page){
+  document.querySelectorAll('.ni').forEach(el=>el.classList.remove('active'));
+  const idx={dashboard:0,commitments:1,kpi:2,klachten:3,regios:4,targets:5,gebruikers:6};
+  const items=document.querySelectorAll('.ni');
+  const map={dashboard:0,commitments:1,kpi:2,klachten:4,regios:5,targets:6,gebruikers:7};
+  // find by onclick
+  document.querySelectorAll('.ni').forEach(el=>{if(el.getAttribute('onclick')&&el.getAttribute('onclick').includes("'"+page+"'"))el.classList.add('active');});
+  const titles={dashboard:'Dashboard',commitments:'Commitments',kpi:"KPI's",klachten:'Klachten',regios:"Regio's",targets:'Targets',gebruikers:'Gebruikers'};
+  document.getElementById('page-title').textContent=titles[page]||page;
+  const pages={dashboard:pgDash,commitments:pgCommits,kpi:pgKPI,klachten:pgKlachten,regios:pgRegios,targets:pgTargets,gebruikers:pgGebruikers};
+  if(pages[page])pages[page]();
 }
 
-function filtered() {
-  if(activeFilter==='all') return allKlachten;
-  if(activeFilter==='behandeling') return allKlachten.filter(k=>k.status==='behandeling'||k.status==='wacht');
-  return allKlachten.filter(k=>k.status===activeFilter);
-}
-
-function byKlant(items) {
-  const m={};
-  items.forEach(k=>{if(!m[k.klant])m[k.klant]=[];m[k.klant].push(k);});
-  return m;
-}
-
-function renderStats() {
-  const k=allKlachten;
-  document.getElementById('s-total').textContent=k.length;
-  document.getElementById('s-open').textContent=k.filter(x=>x.status==='open').length;
-  document.getElementById('s-behandeling').textContent=k.filter(x=>x.status==='behandeling'||x.status==='wacht').length;
-  document.getElementById('s-opgelost').textContent=k.filter(x=>x.status==='opgelost').length;
-  const lbl={all:'Alle klachten',open:'Open klachten',behandeling:'In behandeling',opgelost:'Opgeloste klachten'};
-  document.getElementById('toolbar-label').textContent=lbl[activeFilter]||'Klachten';
-}
-
-function render() {
-  renderStats();
-  const c=document.getElementById('list-card');
-  const items=filtered();
-  const isAdmin=profiel.rol==='admin';
-  if(!items.length){c.innerHTML='<div class="empty-state">Geen klachten gevonden.</div>';return;}
-  if(isAdmin){
-    const perUser={};
-    items.forEach(k=>{
-      const uid=k.user_id||'?';
-      const naam=k.profielen?(k.profielen.naam||k.profielen.email):'Onbekend';
-      if(!perUser[uid])perUser[uid]={naam,items:[]};
-      perUser[uid].items.push(k);
+// ── DASHBOARD ──
+function pgDash(){
+  const isA=me.rol==='admin';
+  const m=nowM();
+  const myC=Commits.filter(c=>c.user_id===me.id&&c.datum.startsWith(m));
+  const myF=myC.reduce((s,c)=>s+(c.omzet_forecast||0),0);
+  const myA=myC.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
+  const myReg=Regios.find(r=>r.id===me.regio_id);
+  const rC=Commits.filter(c=>c.datum.startsWith(m)&&(c.user_id===me.id||(myReg&&c.profielen?.regio_id===me.regio_id)));
+  const rF=rC.reduce((s,c)=>s+(c.omzet_forecast||0),0);
+  const rA=rC.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
+  const myT=Targets.find(t=>t.type==='persoon'&&t.user_id===me.id&&t.periode===m);
+  const rT=myReg?Targets.find(t=>t.type==='regio'&&t.regio_id===me.regio_id&&t.periode===m):null;
+  const unc=Commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<nowD());
+  document.getElementById('tbr').innerHTML='<button class="teal" onclick="openCM()">+ Commitment</button>';
+  let h='<div class="stats-row">';
+  const pp=myT?pct(myA,myT.omzet_target):null;
+  h+='<div class="sc"><div class="sv cn">'+eur(myA)+'</div><div class="sl">Mijn actuals</div><div class="ss">Forecast: '+eur(myF)+'</div>'+
+    (pp!==null?'<div class="pb"><div class="pf'+(pp<50?' re':pp<80?' am':'')+'" style="width:'+pp+'%"></div></div>':'')+'</div>';
+  const rp=rT?pct(rA,rT.omzet_target):null;
+  h+='<div class="sc"><div class="sv" style="color:var(--teal)">'+eur(rA)+'</div><div class="sl">'+(myReg?myReg.naam:'Regio')+'</div><div class="ss">Forecast: '+eur(rF)+'</div>'+
+    (rp!==null?'<div class="pb"><div class="pf'+(rp<50?' re':rp<80?' am':'')+'" style="width:'+rp+'%"></div></div>':'')+'</div>';
+  h+='<div class="sc"><div class="sv '+(unc.length?'ca':'cg')+'">'+unc.length+'</div><div class="sl">Te bevestigen</div><div class="ss">'+(unc.length?'Ga naar Commitments':'Alles bijgewerkt ✓')+'</div></div>';
+  h+='<div class="sc"><div class="sv cr">'+Kl.filter(k=>k.status==='open').length+'</div><div class="sl">Open klachten</div><div class="ss">'+Kl.filter(k=>k.status==='behandeling').length+' in behandeling</div></div>';
+  h+='</div>';
+  const rec=Commits.filter(c=>c.user_id===me.id).slice(0,5);
+  h+='<div class="toolbar"><span class="tl">Recente commitments</span><button class="sm" onclick="nav(\'commitments\')">Alles →</button></div>';
+  h+='<div class="lc">'+(rec.length?rec.map(cRow).join(''):'<div class="empty">Nog geen commitments.</div>')+'</div>';
+  if(isA){
+    h+='<div class="toolbar" style="margin-top:1rem"><span class="tl">Regio overzicht '+ m +'</span></div><div class="lc"><table class="dt"><thead><tr><th>Regio</th><th>Forecast</th><th>Actuals</th><th>Target</th><th>%</th></tr></thead><tbody>';
+    Regios.forEach(r=>{
+      const rc=Commits.filter(c=>c.datum.startsWith(m)&&c.profielen?.regio_id===r.id);
+      const rf=rc.reduce((s,c)=>s+(c.omzet_forecast||0),0);
+      const ra=rc.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
+      const rt=Targets.find(t=>t.type==='regio'&&t.regio_id===r.id&&t.periode===m);
+      const p=rt?pct(ra,rt.omzet_target):null;
+      h+='<tr><td style="font-weight:600">'+r.naam+'</td><td>'+eur(rf)+'</td><td>'+eur(ra)+'</td><td>'+(rt?eur(rt.omzet_target):'—')+'</td><td>'+(p!==null?'<span style="font-weight:700;color:'+(p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)')+'">'+ p +'%</span>':'—')+'</td></tr>';
     });
-    c.innerHTML=Object.keys(perUser).map(uid=>{
-      const u=perUser[uid];
-      const g=byKlant(u.items);
-      return `<div class="section-header"><span>${u.naam}</span><span style="font-size:12px;font-weight:400;">${u.items.length} klacht${u.items.length!==1?'en':''}</span></div>`
-        +Object.keys(g).map(kl=>klantRow(kl,g[kl])).join('');
-    }).join('');
-  } else {
-    const g=byKlant(items);
-    c.innerHTML=Object.keys(g).map(kl=>klantRow(kl,g[kl])).join('');
+    h+='</tbody></table></div>';
   }
+  document.getElementById('content').innerHTML=h;
 }
 
-function klantRow(klant,items) {
-  const isOpen=openKlant===klant;
-  const oc=items.filter(k=>k.status!=='opgelost').length;
-  const ss=[...new Set(items.map(k=>k.status))];
-  const badges=ss.map(s=>`<span class="badge ${SM[s].cls}">${SM[s].label}</span>`).join('');
-  const detail=items.map(k=>klachtCard(k,klant)).join('');
-  return `<div>
-    <div class="klant-row${isOpen?' active':''}" onclick="tog('${esc(klant)}')">
-      <div><div class="klant-name">${klant}</div><div class="klant-meta">${items.length} klacht${items.length!==1?'en':''}${oc>0?' &middot; '+oc+' open':''}</div></div>
-      <div class="klant-right"><div style="display:flex;gap:4px;flex-wrap:wrap">${badges}</div><span class="chevron${isOpen?' open':''}">&#9660;</span></div>
-    </div>
-    <div class="detail-panel${isOpen?' open':''}">
-      <div class="detail-inner">${detail}
-        <div class="detail-footer"><button class="small" onclick="mailKlant('${esc(klant)}')">&#9993; Mail klachten van ${klant}</button></div>
-      </div>
-    </div>
-  </div>`;
+function cRow(c){
+  const st=c.bevestigd?(c.gehaald?'gehaald':'gemist'):'open2';
+  const sl=c.bevestigd?(c.gehaald?'Gehaald ✓':'Gemist ✗'):'Open';
+  const can=!c.bevestigd&&c.datum<=nowD()&&c.user_id===me.id;
+  return '<div class="ri"><div><div class="rm">'+dt(c.datum)+' — '+eur(c.omzet_forecast)+' forecast</div><div class="rs">'+(c.bevestigd&&c.omzet_actuals!=null?'Actuals: '+eur(c.omzet_actuals):'Nog niet bevestigd')+'</div></div><div class="rr"><span class="badge b-'+st+'">'+sl+'</span>'+(can?'<button class="sm amber" onclick="openBev('+ c.id +')">Bevestigen</button>':'')+'</div></div>';
 }
 
-function klachtCard(k,klant) {
-  const isAdmin=profiel.rol==='admin';
-  const canEdit=isAdmin||k.user_id===profiel.id;
-  const nots=allNotities.filter(n=>n.klacht_id===k.id);
-  const notsHtml=nots.length?nots.map(n=>`
-    <div class="notitie-item"><div class="notitie-dot"></div><div>
-      <div class="notitie-tekst">${n.tekst.replace(/</g,'&lt;')}</div>
-      <div class="notitie-meta">${n.profielen?(n.profielen.naam||n.profielen.email):''} &middot; ${fmt(n.aangemaakt_op)}</div>
-    </div></div>`).join('')
-    :'<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Nog geen notities.</div>';
-  const statusCtrl=canEdit
-    ?`<select onchange="statusChg(${k.id},this.value,'${esc(klant)}')">
-        <option value="open"${k.status==='open'?' selected':''}>Open</option>
-        <option value="behandeling"${k.status==='behandeling'?' selected':''}>In behandeling</option>
-        <option value="wacht"${k.status==='wacht'?' selected':''}>Wacht op klant</option>
-        <option value="opgelost"${k.status==='opgelost'?' selected':''}>Opgelost</option>
-      </select>`
-    :`<span class="badge ${SM[k.status].cls}">${SM[k.status].label}</span>`;
-  return `<div class="klacht-card" id="kc-${k.id}">
-    <div class="kc-meta">
-      <span class="badge ${SM[k.status].cls}">${SM[k.status].label}</span>
-      ${k.deal?`<span class="kc-deal">${k.deal}</span>`:''}
-      <span class="kc-datum">${fmt(k.aangemaakt_op)}</span>
-    </div>
-    <div class="kc-samen">${k.samenvatting.replace(/</g,'&lt;')}</div>
-    ${k.oplossing?`<div class="kc-oplossing"><strong>Oplossing</strong>${k.oplossing.replace(/</g,'&lt;')}</div>`:''}
-    <div class="kc-actions">
-      ${statusCtrl}
-      ${canEdit?`<button class="small danger" onclick="delKlacht(${k.id},'${esc(klant)}')">&#128465;</button>`:''}
-    </div>
-    <div class="notities-section">
-      <div class="notitie-label">Notities</div>
-      <div id="nots-${k.id}">${notsHtml}</div>
-      <div class="notitie-row">
-        <input type="text" id="ni-${k.id}" placeholder="Notitie toevoegen..." onkeydown="if(event.key==='Enter')addNot(${k.id},'${esc(klant)}')" />
-        <button class="small" onclick="addNot(${k.id},'${esc(klant)}')">+</button>
-      </div>
-    </div>
-  </div>`;
+// ── COMMITMENTS ──
+function pgCommits(){
+  const isA=me.rol==='admin';
+  document.getElementById('tbr').innerHTML='<button class="teal" onclick="openCM()">+ Commitment</button>';
+  const unc=Commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<nowD());
+  let h='';
+  if(unc.length)h+='<div class="alert warn"><div><strong style="color:#92400e">⚠ '+unc.length+' commitment'+(unc.length>1?'s ':' ')+'te bevestigen</strong><div style="font-size:12px;color:#92400e;margin-top:2px">Bevestig wat je daadwerkelijk gerealiseerd hebt.</div></div></div>';
+  if(isA){
+    const perU={};
+    Commits.forEach(c=>{const uid=c.user_id;const n=c.profielen?(c.profielen.naam||c.profielen.email):'?';if(!perU[uid])perU[uid]={n,items:[]};perU[uid].items.push(c);});
+    h+='<div class="lc">';
+    Object.keys(perU).forEach(uid=>{const u=perU[uid];h+='<div class="sh"><span>'+u.n+'</span><span style="font-weight:400">'+u.items.length+' commits</span></div>'+u.items.map(cRowFull).join('');});
+    h+='</div>';
+  } else {
+    h+='<div class="lc">'+(Commits.length?Commits.filter(c=>c.user_id===me.id).map(cRowFull).join(''):'<div class="empty">Nog geen commitments.</div>')+'</div>';
+  }
+  document.getElementById('content').innerHTML=h;
 }
 
-function tog(klant){openKlant=openKlant===klant?null:klant;render();}
-
-function statusChg(id,status,klant){
-  if(status==='opgelost'){
-    pendingOpl={id,klant};
-    document.getElementById('opl-tekst').value='';
-    document.getElementById('opl-overlay').classList.add('open');
-    setTimeout(()=>document.getElementById('opl-tekst').focus(),50);
-  } else { updStatus(id,status,null,klant); }
+function cRowFull(c){
+  const st=c.bevestigd?(c.gehaald?'gehaald':'gemist'):'open2';
+  const sl=c.bevestigd?(c.gehaald?'Gehaald ✓':'Gemist ✗'):'Openstaand';
+  const can=!c.bevestigd&&c.datum<=nowD()&&(c.user_id===me.id||me.rol==='admin');
+  const ext=[1,2,3].filter(i=>c['extra_'+i+'_label']).map(i=>'<span style="font-size:12px;color:var(--muted)"><strong style="color:var(--text)">'+c['extra_'+i+'_label']+':</strong> '+(c['extra_'+i+'_forecast']||'—')+(c['extra_'+i+'_actuals']?' → '+c['extra_'+i+'_actuals']:'')+'</span>').join(' &middot; ');
+  return '<div class="ri"><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:15px;font-weight:700">'+eur(c.omzet_forecast)+'</span><span style="font-size:12px;color:var(--muted)">forecast</span>'+(c.bevestigd&&c.omzet_actuals!=null?'<span style="font-size:15px;font-weight:700;color:'+(c.gehaald?'var(--green)':'var(--red)')+'">→ '+eur(c.omzet_actuals)+'</span>':'')+'<span class="badge b-'+st+'">'+sl+'</span></div><div style="font-size:12px;color:var(--muted)">'+dt(c.datum)+(ext?' &middot; '+ext:'')+'</div></div><div class="rr">'+(can?'<button class="sm amber" onclick="openBev('+ c.id +')">Bevestigen</button>':'')+'<button class="sm danger" onclick="delC('+ c.id +')">🗑</button></div></div>';
 }
 
-async function saveOplossing(){
-  const tekst=document.getElementById('opl-tekst').value.trim();
-  if(!tekst){toast('Vul een oplossing in.');return;}
-  const btn=document.getElementById('btn-opl-save');
-  btn.disabled=true;btn.innerHTML='<span class="loader"></span>';
-  try{await updStatus(pendingOpl.id,'opgelost',tekst,pendingOpl.klant);closeOvl('opl-overlay');}
-  finally{btn.disabled=false;btn.innerHTML='Opslaan als opgelost';}
+function openCM(){
+  const tom=new Date();tom.setDate(tom.getDate()+1);
+  document.getElementById('c-d').value=tom.toISOString().slice(0,10);
+  document.getElementById('c-o').value='';
+  ['c-e1l','c-e1f','c-e1a','c-e2l','c-e2f','c-e2a','c-e3l','c-e3f','c-e3a'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ov-c').classList.add('open');
 }
 
-async function updStatus(id,status,opl,klant){
+async function saveCommit(){
+  const d=v('c-d'),o=parseFloat(v('c-o'));
+  if(!d||isNaN(o)){toast('Vul datum en omzet in.');return;}
+  const btn=document.getElementById('btn-cs');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
   try{
-    const body={status,bijgewerkt_op:new Date().toISOString()};
-    if(opl)body.oplossing=opl;
-    await api('PATCH','/rest/v1/klachten?id=eq.'+id,body);
-    const k=allKlachten.find(x=>x.id===id);
-    if(k){k.status=status;if(opl)k.oplossing=opl;}
-    openKlant=klant;render();toast('Status bijgewerkt.','ok');
-  }catch(e){toast('Fout: '+e.message,'err');}
+    const body={user_id:me.id,regio_id:me.regio_id||null,datum:d,omzet_forecast:o,
+      extra_1_label:v('c-e1l')||null,extra_1_forecast:v('c-e1f')||null,extra_1_actuals:v('c-e1a')||null,
+      extra_2_label:v('c-e2l')||null,extra_2_forecast:v('c-e2f')||null,extra_2_actuals:v('c-e2a')||null,
+      extra_3_label:v('c-e3l')||null,extra_3_forecast:v('c-e3f')||null,extra_3_actuals:v('c-e3a')||null};
+    const res=await api('POST','/rest/v1/commitments',body);
+    if(res&&res[0])Commits.unshift(res[0]);
+    co('ov-c');await loadAll();nav('commitments');toast('Commitment opgeslagen.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
 }
 
-async function addNot(klachtId,klant){
-  const inp=document.getElementById('ni-'+klachtId);
-  const tekst=inp.value.trim();if(!tekst)return;
-  inp.value='';
+function openBev(id){
+  bevPend=id;
+  const c=Commits.find(x=>x.id===id);
+  document.getElementById('b-o').value='';
+  [1,2,3].forEach(i=>{const w=document.getElementById('b-e'+i+'w');const l=c['extra_'+i+'_label'];w.style.display=l?'block':'none';if(l){document.getElementById('b-e'+i+'l').textContent=l+' (actuals)';document.getElementById('b-e'+i+'a').value='';}});
+  document.getElementById('ov-b').classList.add('open');
+}
+
+async function saveBev(){
+  const o=parseFloat(v('b-o'));if(isNaN(o)){toast('Vul omzet in.');return;}
+  const c=Commits.find(x=>x.id===bevPend);
+  const btn=document.getElementById('btn-bs');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
   try{
-    const res=await api('POST','/rest/v1/notities',{klacht_id:klachtId,user_id:profiel.id,tekst});
-    if(res&&res[0]){res[0].profielen={naam:profiel.naam,email:profiel.email};allNotities.push(res[0]);}
-    openKlant=klant;render();toast('Notitie toegevoegd.','ok');
-  }catch(e){toast('Fout: '+e.message,'err');}
+    const body={bevestigd:true,omzet_actuals:o,gehaald:o>=(c.omzet_forecast||0),
+      extra_1_actuals:v('b-e1a')||c.extra_1_actuals,extra_2_actuals:v('b-e2a')||c.extra_2_actuals,extra_3_actuals:v('b-e3a')||c.extra_3_actuals};
+    await api('PATCH','/rest/v1/commitments?id=eq.'+bevPend,body);
+    Object.assign(c,body);co('ov-b');await loadAll();nav('commitments');
+    toast(o>=(c.omzet_forecast||0)?'Target gehaald! 🎉':'Bevestigd.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Bevestigen';}
 }
 
-async function delKlacht(id,klant){
-  if(!confirm('Klacht verwijderen?'))return;
-  try{
-    await api('DELETE','/rest/v1/klachten?id=eq.'+id);
-    allKlachten=allKlachten.filter(k=>k.id!==id);
-    allNotities=allNotities.filter(n=>n.klacht_id!==id);
-    openKlant=allKlachten.some(k=>k.klant===klant)?klant:null;
-    render();toast('Klacht verwijderd.');
-  }catch(e){toast('Fout: '+e.message,'err');}
+async function delC(id){
+  if(!confirm('Verwijderen?'))return;
+  try{await api('DELETE','/rest/v1/commitments?id=eq.'+id);Commits=Commits.filter(c=>c.id!==id);await loadAll();nav('commitments');toast('Verwijderd.');}
+  catch(e){toast('Fout: '+e.message,'err');}
 }
 
-function openKlachtModal(){
-  ['f-klant','f-deal','f-samen','f-oplossing'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('f-status').value='open';
-  document.getElementById('f-opl-wrap').style.display='none';
-  document.getElementById('klacht-overlay').classList.add('open');
-  setTimeout(()=>document.getElementById('f-klant').focus(),50);
+// ── KPI ──
+function pgKPI(){
+  document.getElementById('tbr').innerHTML='';
+  const m=nowM();const isA=me.rol==='admin';
+  const myReg=Regios.find(r=>r.id===me.regio_id);
+  const ws=new Date();ws.setDate(ws.getDate()-ws.getDay()+1);const wsStr=ws.toISOString().slice(0,10);
+  const wC=Commits.filter(c=>c.datum>=wsStr&&c.datum<=nowD()&&(isA||c.user_id===me.id||(myReg&&c.profielen?.regio_id===me.regio_id)));
+  const wF=wC.reduce((s,c)=>s+(c.omzet_forecast||0),0);
+  const wA=wC.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
+  const myM=Commits.filter(c=>c.user_id===me.id&&c.datum.startsWith(m));
+  const myMa=myM.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
+  const myT=Targets.find(t=>t.type==='persoon'&&t.user_id===me.id&&t.periode===m);
+  const rM=myReg?Commits.filter(c=>c.datum.startsWith(m)&&c.profielen?.regio_id===me.regio_id):[];
+  const rMa=rM.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
+  const rT=myReg?Targets.find(t=>t.type==='regio'&&t.regio_id===me.regio_id&&t.periode===m):null;
+  const bev=Commits.filter(c=>c.user_id===me.id&&c.bevestigd);
+  const hit=bev.length?Math.round(bev.filter(c=>c.gehaald).length/bev.length*100):0;
+  let h='<div class="stats-row">';
+  const mp=myT?pct(myMa,myT.omzet_target):null;
+  h+='<div class="sc"><div class="sv cn">'+eur(myMa)+'</div><div class="sl">Mijn maandstand</div><div class="ss">Target: '+(myT?eur(myT.omzet_target):'niet ingesteld')+'</div>'+(mp!==null?'<div class="pb"><div class="pf'+(mp<50?' re':mp<80?' am':'')+'" style="width:'+mp+'%"></div></div>':'')+'</div>';
+  const rp=rT?pct(rMa,rT.omzet_target):null;
+  h+='<div class="sc"><div class="sv" style="color:var(--teal)">'+eur(rMa)+'</div><div class="sl">'+(myReg?myReg.naam:'Regio')+' maand</div><div class="ss">Target: '+(rT?eur(rT.omzet_target):'niet ingesteld')+'</div>'+(rp!==null?'<div class="pb"><div class="pf'+(rp<50?' re':rp<80?' am':'')+'" style="width:'+rp+'%"></div></div>':'')+'</div>';
+  h+='<div class="sc"><div class="sv cb">'+eur(wA)+'</div><div class="sl">Weekstand</div><div class="ss">Forecast: '+eur(wF)+'</div></div>';
+  h+='<div class="sc"><div class="sv '+(hit>=80?'cg':hit>=50?'ca':'cr')+'">'+hit+'%</div><div class="sl">Hit rate</div><div class="ss">'+bev.length+' bevestigd</div></div></div>';
+  if(myReg){
+    const ru=Profielen.length?Profielen.filter(u=>u.regio_id===me.regio_id):[{id:me.id,naam:me.naam,email:me.email}];
+    h+='<div class="kgrid"><div class="kc"><div class="kt">Maandstand per persoon — '+(myReg.naam)+'</div>';
+    ru.forEach(u=>{
+      const uc=Commits.filter(c=>c.user_id===u.id&&c.datum.startsWith(m));
+      const ua=uc.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
+      const ut=Targets.find(t=>t.type==='persoon'&&t.user_id===u.id&&t.periode===m);
+      const up=ut?pct(ua,ut.omzet_target):null;
+      h+='<div class="kr"><span style="font-size:13px;font-weight:500">'+(u.naam||u.email)+'</span><div style="text-align:right"><span style="font-size:13px;font-weight:700">'+eur(ua)+'</span>'+(ut?'<div style="font-size:11px;color:var(--muted)">'+up+'% van '+eur(ut.omzet_target)+'</div><div class="pb" style="width:120px"><div class="pf'+(up<50?' re':up<80?' am':'')+'" style="width:'+up+'%"></div></div>':'')+'</div></div>';
+    });
+    h+='</div>';
+    const days=[...new Set(Commits.filter(c=>c.datum.startsWith(m)&&(me.regio_id?c.profielen?.regio_id===me.regio_id:c.user_id===me.id)).map(c=>c.datum))].sort();
+    h+='<div class="kc"><div class="kt">Forecast vs Actuals — '+m+'</div>';
+    if(!days.length){h+='<div style="font-size:13px;color:var(--muted);padding:1rem 0">Nog geen data.</div>';}
+    else days.forEach(d=>{
+      const dc=Commits.filter(c=>c.datum===d&&(me.regio_id?c.profielen?.regio_id===me.regio_id:c.user_id===me.id));
+      const df=dc.reduce((s,c)=>s+(c.omzet_forecast||0),0);
+      const da=dc.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
+      h+='<div class="kr"><span style="font-size:13px">'+dt(d)+'</span><span style="font-size:13px;font-weight:700">'+(da?eur(da)+' <span style="font-size:11px;font-weight:400;color:var(--muted)">/ '+eur(df)+'</span>':eur(df)+' <span style="font-size:11px;font-weight:400;color:var(--muted)">forecast</span>')+'</span></div>';
+    });
+    h+='</div></div>';
+  }
+  document.getElementById('content').innerHTML=h;
 }
 
+// ── KLACHTEN ──
+function pgKlachten(){
+  const isA=me.rol==='admin';
+  document.getElementById('tbr').innerHTML='<button class="teal" onclick="openKM()">+ Klacht</button>';
+  const filt=kFilter==='all'?Kl:kFilter==='behandeling'?Kl.filter(k=>k.status==='behandeling'||k.status==='wacht'):Kl.filter(k=>k.status===kFilter);
+  const stats=[['all','Totaal',Kl.length,'cn'],['open','Open',Kl.filter(k=>k.status==='open').length,'cr'],['behandeling','Behandeling',Kl.filter(k=>k.status==='behandeling'||k.status==='wacht').length,'ca'],['opgelost','Opgelost',Kl.filter(k=>k.status==='opgelost').length,'cg']];
+  let h='<div class="stats-row">'+stats.map(([f,l,n,c])=>'<div class="sc click'+(kFilter===f?' act':'')+'" onclick="setKF(\''+ f +'\')"><div class="sv '+c+'">'+n+'</div><div class="sl">'+l+'</div></div>').join('')+'</div>';
+  const g={};filt.forEach(k=>{if(!g[k.klant])g[k.klant]=[];g[k.klant].push(k);});
+  h+='<div class="lc">';
+  if(!Object.keys(g).length){h+='<div class="empty">Geen klachten.</div>';}
+  else if(isA){
+    const pu={};filt.forEach(k=>{const uid=k.user_id||'?';const n=k.profielen?(k.profielen.naam||k.profielen.email):'?';if(!pu[uid])pu[uid]={n,items:[]};pu[uid].items.push(k);});
+    Object.keys(pu).forEach(uid=>{const u=pu[uid];const ug={};u.items.forEach(k=>{if(!ug[k.klant])ug[k.klant]=[];ug[k.klant].push(k);});h+='<div class="sh"><span>'+u.n+'</span></div>'+Object.keys(ug).map(kl=>klantRow(kl,ug[kl])).join('');});
+  } else {Object.keys(g).forEach(kl=>h+=klantRow(kl,g[kl]));}
+  h+='</div>';
+  document.getElementById('content').innerHTML=h;
+}
+function setKF(f){kFilter=f;pgKlachten();}
+function togKO(){document.getElementById('kl-ow').style.display=document.getElementById('kl-st').value==='opgelost'?'block':'none';}
+function openKM(){['kl-k','kl-d','kl-s','kl-op'].forEach(id=>document.getElementById(id).value='');document.getElementById('kl-st').value='open';document.getElementById('kl-ow').style.display='none';document.getElementById('ov-kl').classList.add('open');}
 async function saveKlacht(){
-  const klant=document.getElementById('f-klant').value.trim();
-  const samen=document.getElementById('f-samen').value.trim();
-  const deal=document.getElementById('f-deal').value.trim();
-  const status=document.getElementById('f-status').value;
-  const opl=document.getElementById('f-oplossing').value.trim();
-  if(!klant||!samen){toast('Vul klantnaam en samenvatting in.');return;}
-  if(status==='opgelost'&&!opl){toast('Vul een oplossing in.');return;}
-  const btn=document.getElementById('btn-klacht-save');
-  btn.disabled=true;btn.innerHTML='<span class="loader"></span>';
-  try{
-    const body={klant,samenvatting:samen,deal:deal||null,status,user_id:profiel.id};
-    if(opl)body.oplossing=opl;
+  const kl=v('kl-k'),sm=v('kl-s'),dl=v('kl-d'),st=document.getElementById('kl-st').value,op=v('kl-op');
+  if(!kl||!sm){toast('Vul klantnaam en samenvatting in.');return;}
+  if(st==='opgelost'&&!op){toast('Vul een oplossing in.');return;}
+  const btn=document.getElementById('btn-kls');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
+  try{const body={klant:kl,samenvatting:sm,deal:dl||null,status:st,user_id:me.id};if(op)body.oplossing=op;
     const res=await api('POST','/rest/v1/klachten?select=*,profielen(naam,email)',body);
-    if(res&&res[0])allKlachten.push(res[0]);
-    openKlant=klant;closeOvl('klacht-overlay');render();toast('Klacht opgeslagen.','ok');
-  }catch(e){toast('Fout: '+e.message,'err');}
-  finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+    if(res&&res[0])Kl.push(res[0]);openK=kl;co('ov-kl');pgKlachten();toast('Klacht opgeslagen.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
 }
-
-function openUserModal(){
-  ['u-naam','u-email','u-pass'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('user-overlay').classList.add('open');
-  setTimeout(()=>document.getElementById('u-naam').focus(),50);
+function klantRow(klant,items){
+  const isO=openK===klant;const oc=items.filter(k=>k.status!=='opgelost').length;
+  const bdg=[...new Set(items.map(k=>k.status))].map(s=>'<span class="badge '+SM[s].c+'">'+SM[s].l+'</span>').join('');
+  const det=items.map(k=>klCard(k,klant)).join('');
+  return '<div><div class="ri click'+(isO?' act':'')+'" onclick="togK(\''+ esc(klant) +'\')"><div><div class="rm">'+ klant +'</div><div class="rs">'+ items.length +' klacht'+(items.length!==1?'en':'')+(oc>0?' &middot; '+oc+' open':'')+'</div></div><div class="rr"><div style="display:flex;gap:4px;flex-wrap:wrap">'+ bdg +'</div><span class="chev'+(isO?' open':'')+'">&#9660;</span></div></div><div class="dp'+(isO?' open':'')+'"><div class="di">'+ det +'<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"><button class="sm" onclick="mailK(\''+ esc(klant) +'\')">&#9993; Mail klachten</button></div></div></div></div>';
 }
-
-async function saveUser(){
-  const naam=document.getElementById('u-naam').value.trim();
-  const email=document.getElementById('u-email').value.trim();
-  const pass=document.getElementById('u-pass').value;
-  if(!naam||!email||!pass){toast('Vul naam, e-mail en wachtwoord in.');return;}
-  if(pass.length<6){toast('Wachtwoord minimaal 6 tekens.');return;}
-  const btn=document.getElementById('btn-user-save');
-  btn.disabled=true;btn.innerHTML='<span class="loader"></span>';
-  try{
-    // Gebruiker aanmaken via service role
-    const res=await authApi('POST','/auth/v1/admin/users',{
-      email,password:pass,email_confirm:true,user_metadata:{naam}
-    },true);
-    // Profiel aanmaken
-    await api('POST','/rest/v1/profielen',{id:res.id,email,naam,rol:'gebruiker'},true);
-    allProfielen.push({id:res.id,email,naam,rol:'gebruiker'});
-    closeOvl('user-overlay');
-    renderUsers();
-    toast(naam+' is aangemaakt en kan direct inloggen.','ok');
-  }catch(e){
-    toast('Fout bij aanmaken: '+e.message,'err');
-  }finally{btn.disabled=false;btn.innerHTML='Aanmaken';}
+function klCard(k,klant){
+  const isA=me.rol==='admin';const ce=isA||k.user_id===me.id;
+  const nots=Nots.filter(n=>n.klacht_id===k.id);
+  const nh=nots.length?nots.map(n=>'<div style="display:flex;gap:8px;margin-bottom:8px"><div class="ni-dot"></div><div><div style="font-size:13px;line-height:1.5">'+ n.tekst.replace(/</g,'&lt;') +'</div><div style="font-size:11px;color:var(--muted);font-family:monospace">'+(n.profielen?(n.profielen.naam||n.profielen.email):'')+' &middot; '+ dt(n.aangemaakt_op) +'</div></div></div>').join(''):'<div style="font-size:12px;color:var(--muted);margin-bottom:6px">Nog geen notities.</div>';
+  const sc=ce?'<select onchange="stChg('+ k.id +',this.value,\''+ esc(klant) +'\')"><option value="open"'+(k.status==='open'?' selected':'')+'>Open</option><option value="behandeling"'+(k.status==='behandeling'?' selected':'')+'>In behandeling</option><option value="wacht"'+(k.status==='wacht'?' selected':'')+'>Wacht op klant</option><option value="opgelost"'+(k.status==='opgelost'?' selected':'')+'>Opgelost</option></select>':'<span class="badge '+SM[k.status].c+'">'+SM[k.status].l+'</span>';
+  return '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:14px 16px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap"><span class="badge '+ SM[k.status].c +'">'+SM[k.status].l+'</span>'+(k.deal?'<span style="font-size:11px;color:var(--muted);font-family:monospace">'+ k.deal +'</span>':'')+'<span style="font-size:11px;color:var(--muted);font-family:monospace">'+ dt(k.aangemaakt_op) +'</span></div><div style="font-size:13px;margin-bottom:10px">'+ k.samenvatting.replace(/</g,'&lt;') +'</div>'+(k.oplossing?'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--rs);padding:10px 12px;font-size:13px;color:#166534;margin-bottom:10px"><strong style="display:block;font-size:11px;text-transform:uppercase;margin-bottom:4px">Oplossing</strong>'+ k.oplossing.replace(/</g,'&lt;') +'</div>':'')+'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+ sc +(ce?'<button class="sm danger" onclick="delKl('+ k.id +',\''+ esc(klant) +'\')">🗑</button>':'')+'</div><div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"><div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Notities</div><div id="nots-'+ k.id +'">'+ nh +'</div><div class="nrow"><input type="text" id="ni-'+ k.id +'" placeholder="Notitie..." onkeydown="if(event.key===\'Enter\')addN('+ k.id +',\''+ esc(klant) +'\')"/><button class="sm" onclick="addN('+ k.id +',\''+ esc(klant) +'\')">+</button></div></div></div>';
 }
+function togK(k){openK=openK===k?null:k;pgKlachten();}
+function stChg(id,st,kl){if(st==='opgelost'){oplPend={id,kl};document.getElementById('op-t').value='';document.getElementById('ov-op').classList.add('open');}else updKS(id,st,null,kl);}
+async function saveOpl(){const t=v('op-t');if(!t){toast('Vul oplossing in.');return;}const btn=document.getElementById('btn-ops');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';try{await updKS(oplPend.id,'opgelost',t,oplPend.kl);co('ov-op');}finally{btn.disabled=false;btn.innerHTML='Opslaan als opgelost';}}
+async function updKS(id,st,op,kl){try{const b={status:st,bijgewerkt_op:new Date().toISOString()};if(op)b.oplossing=op;await api('PATCH','/rest/v1/klachten?id=eq.'+id,b);const k=Kl.find(x=>x.id===id);if(k){k.status=st;if(op)k.oplossing=op;}openK=kl;pgKlachten();toast('Status bijgewerkt.','ok');}catch(e){toast('Fout: '+e.message,'err');}}
+async function delKl(id,kl){if(!confirm('Klacht verwijderen?'))return;try{await api('DELETE','/rest/v1/klachten?id=eq.'+id);Kl=Kl.filter(k=>k.id!==id);Nots=Nots.filter(n=>n.klacht_id!==id);openK=Kl.some(k=>k.klant===kl)?kl:null;pgKlachten();toast('Verwijderd.');}catch(e){toast('Fout: '+e.message,'err');}}
+async function addN(kid,kl){const inp=document.getElementById('ni-'+kid);const t=inp.value.trim();if(!t)return;inp.value='';try{const res=await api('POST','/rest/v1/notities',{klacht_id:kid,user_id:me.id,tekst:t});if(res&&res[0]){res[0].profielen={naam:me.naam,email:me.email};Nots.push(res[0]);}openK=kl;pgKlachten();toast('Notitie toegevoegd.','ok');}catch(e){toast('Fout: '+e.message,'err');}}
+function mailK(kl){const items=Kl.filter(k=>k.klant===kl);const lines=['Hoi Matthijs,','','Klachten voor '+kl+':',''];items.forEach((k,i)=>{lines.push((i+1)+'. '+SM[k.status].l);lines.push(' '+k.samenvatting);if(k.oplossing)lines.push(' Oplossing: '+k.oplossing);lines.push('');});lines.push('Met vriendelijke groet,','Daniël');location.href='mailto:matthijs@thebranding.club?subject='+encodeURIComponent('Klachten '+kl)+'&body='+encodeURIComponent(lines.join('\n'));}
 
-function openResetModal(userId, naam){
-  resetUserId=userId;
-  document.getElementById('reset-title').textContent='Wachtwoord resetten — '+naam;
-  document.getElementById('r-pass').value='';
-  document.getElementById('r-pass2').value='';
-  document.getElementById('reset-overlay').classList.add('open');
-  setTimeout(()=>document.getElementById('r-pass').focus(),50);
+// ── REGIOS ──
+function pgRegios(){
+  document.getElementById('tbr').innerHTML='<button class="teal" onclick="openRM()">+ Regio</button>';
+  let h='<div class="lc"><table class="dt"><thead><tr><th>Naam</th><th>Leden</th><th>Acties</th></tr></thead><tbody>';
+  if(!Regios.length)h+='<tr><td colspan="3"><div class="empty">Nog geen regio\'s.</div></td></tr>';
+  else Regios.forEach(r=>{const leden=Profielen.filter(u=>u.regio_id===r.id);h+='<tr><td style="font-weight:600">'+r.naam+'</td><td style="color:var(--muted)">'+(leden.map(u=>u.naam||u.email).join(', ')||'—')+'</td><td><div style="display:flex;gap:6px"><button class="sm" onclick="openRM('+ r.id +',\''+ esc(r.naam) +'\')">✏️</button><button class="sm danger" onclick="delRg('+ r.id +')">🗑</button></div></td></tr>';});
+  h+='</tbody></table></div>';document.getElementById('content').innerHTML=h;
 }
+function openRM(id,naam){editRegioId=id||null;document.getElementById('rg-mt').textContent=id?'Regio bewerken':'Regio aanmaken';document.getElementById('rg-n').value=naam||'';;document.getElementById('ov-rg').classList.add('open');}
+async function saveRegio(){const n=v('rg-n');if(!n){toast('Vul een naam in.');return;}const btn=document.getElementById('btn-rgs');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';try{if(editRegioId){await api('PATCH','/rest/v1/regios?id=eq.'+editRegioId,{naam:n});const r=Regios.find(x=>x.id===editRegioId);if(r)r.naam=n;}else{const res=await api('POST','/rest/v1/regios',{naam:n});if(res&&res[0])Regios.push(res[0]);}co('ov-rg');pgRegios();toast('Opgeslagen.','ok');}catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}}
+async function delRg(id){if(!confirm('Regio verwijderen?'))return;try{await api('DELETE','/rest/v1/regios?id=eq.'+id);Regios=Regios.filter(r=>r.id!==id);pgRegios();toast('Verwijderd.');}catch(e){toast('Fout: '+e.message,'err');}}
 
-async function saveReset(){
-  const pass=document.getElementById('r-pass').value;
-  const pass2=document.getElementById('r-pass2').value;
-  if(!pass||pass.length<6){toast('Wachtwoord minimaal 6 tekens.');return;}
-  if(pass!==pass2){toast('Wachtwoorden komen niet overeen.');return;}
-  const btn=document.getElementById('btn-reset-save');
-  btn.disabled=true;btn.innerHTML='<span class="loader"></span>';
-  try{
-    await authApi('PUT','/auth/v1/admin/users/'+resetUserId,{password:pass},true);
-    closeOvl('reset-overlay');
-    toast('Wachtwoord succesvol gewijzigd.','ok');
-  }catch(e){
-    toast('Fout bij resetten: '+e.message,'err');
-  }finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+// ── TARGETS ──
+function pgTargets(){
+  document.getElementById('tbr').innerHTML='<button class="teal" onclick="openTM()">+ Target</button>';
+  let h='<div class="lc"><table class="dt"><thead><tr><th>Type</th><th>Naam</th><th>Periode</th><th>Target</th><th>Actuals</th><th></th></tr></thead><tbody>';
+  if(!Targets.length)h+='<tr><td colspan="6"><div class="empty">Nog geen targets.</div></td></tr>';
+  else Targets.forEach(t=>{const n=t.type==='regio'?(Regios.find(r=>r.id===t.regio_id)?.naam||'?'):(Profielen.find(u=>u.id===t.user_id)?.naam||'?');const co2=t.type==='regio'?Commits.filter(c=>c.datum.startsWith(t.periode)&&c.profielen?.regio_id===t.regio_id):Commits.filter(c=>c.datum.startsWith(t.periode)&&c.user_id===t.user_id);const act=co2.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);const p=pct(act,t.omzet_target);h+='<tr><td><span class="badge '+(t.type==='regio'?'b-behandeling':'b-user')+'">'+t.type+'</span></td><td style="font-weight:500">'+ n +'</td><td style="font-family:monospace;font-size:12px">'+ t.periode +'</td><td style="font-weight:700">'+ eur(t.omzet_target) +'</td><td><span style="font-weight:700;color:'+(p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)')+'">'+eur(act)+'</span> <span style="font-size:11px;color:var(--muted)">('+ p +'%)</span></td><td><button class="sm danger" onclick="delTg('+ t.id +')">🗑</button></td></tr>';});
+  h+='</tbody></table></div>';document.getElementById('content').innerHTML=h;
 }
+function openTM(){document.getElementById('tg-tp').value='regio';document.getElementById('tg-rw').style.display='block';document.getElementById('tg-uw').style.display='none';document.getElementById('tg-r').innerHTML=Regios.map(r=>'<option value="'+ r.id +'">'+ r.naam +'</option>').join('');document.getElementById('tg-u').innerHTML=Profielen.map(u=>'<option value="'+ u.id +'">'+(u.naam||u.email)+'</option>').join('');document.getElementById('tg-p').value=nowM();document.getElementById('tg-o').value='';document.getElementById('ov-tg').classList.add('open');}
+function togTT(){const tp=document.getElementById('tg-tp').value;document.getElementById('tg-rw').style.display=tp==='regio'?'block':'none';document.getElementById('tg-uw').style.display=tp==='persoon'?'block':'none';}
+async function saveTarget(){const tp=document.getElementById('tg-tp').value;const per=v('tg-p');const omz=parseFloat(v('tg-o'));if(!per||isNaN(omz)){toast('Vul periode en target in.');return;}const b={type:tp,periode:per,omzet_target:omz};if(tp==='regio')b.regio_id=parseInt(document.getElementById('tg-r').value);else b.user_id=document.getElementById('tg-u').value;const btn=document.getElementById('btn-tgs');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';try{const res=await api('POST','/rest/v1/targets',b);if(res&&res[0])Targets.unshift(res[0]);co('ov-tg');pgTargets();toast('Target opgeslagen.','ok');}catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}}
+async function delTg(id){if(!confirm('Target verwijderen?'))return;try{await api('DELETE','/rest/v1/targets?id=eq.'+id);Targets=Targets.filter(t=>t.id!==id);pgTargets();toast('Verwijderd.');}catch(e){toast('Fout: '+e.message,'err');}}
 
-function renderUsers(){
-  const tbody=document.getElementById('user-tbody');
-  if(!allProfielen.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">Geen gebruikers.</td></tr>';return;}
-  tbody.innerHTML=allProfielen.map(u=>`<tr>
-    <td style="font-weight:500">${u.naam||'—'}</td>
-    <td style="color:var(--muted)">${u.email}</td>
-    <td><span class="badge ${u.rol==='admin'?'b-behandeling':'b-wacht'}">${u.rol}</span></td>
-    <td>${allKlachten.filter(k=>k.user_id===u.id).length}</td>
-    <td><div class="user-actions">
-      <button class="small amber" onclick="openResetModal('${u.id}','${esc(u.naam||u.email)}')">&#128274; Reset wachtwoord</button>
-    </div></td>
-  </tr>`).join('');
+// ── GEBRUIKERS ──
+function pgGebruikers(){
+  document.getElementById('tbr').innerHTML='<button class="teal" onclick="openUM()">+ Gebruiker</button>';
+  let h='<div class="lc"><table class="dt"><thead><tr><th>Naam</th><th>E-mail</th><th>Regio</th><th>Rol</th><th>Acties</th></tr></thead><tbody>';
+  Profielen.forEach(u=>{const rg=Regios.find(r=>r.id===u.regio_id);h+='<tr><td style="font-weight:500">'+(u.naam||'—')+'</td><td style="color:var(--muted);font-size:12px">'+u.email+'</td><td>'+(rg?rg.naam:'—')+'</td><td><span class="badge '+(u.rol==='admin'?'b-admin':'b-user')+'">'+u.rol+'</span></td><td><div style="display:flex;gap:6px;align-items:center"><button class="sm amber" onclick="openRS(\''+ u.id +'\',\''+ esc(u.naam||u.email) +'\')">🔒 Reset</button><select class="inl" onchange="chRg(\''+ u.id +'\',this.value)"><option value="">— Regio —</option>'+Regios.map(r=>'<option value="'+ r.id +'"'+(u.regio_id===r.id?' selected':'')+'>'+r.naam+'</option>').join('')+ '</select></div></td></tr>';});
+  h+='</tbody></table></div>';document.getElementById('content').innerHTML=h;
 }
-
-function mailOpen(){
-  const open=allKlachten.filter(k=>k.status!=='opgelost');
-  if(!open.length){toast('Geen open klachten.');return;}
-  const g=byKlant(open);
-  const lines=['Hoi Matthijs,','','Open klachten overzicht:',''];
-  let n=1;
-  Object.keys(g).forEach(kl=>g[kl].forEach(k=>{
-    lines.push(n+++'. '+kl);
-    if(k.deal)lines.push('   Deal: '+k.deal);
-    lines.push('   Status: '+SM[k.status].label);
-    lines.push('   Klacht: '+k.samenvatting);
-    lines.push('');
-  }));
-  lines.push('Met vriendelijke groet,','Daniël');
-  location.href='mailto:matthijs@thebranding.club?subject='+encodeURIComponent('Open klachten — '+new Date().toLocaleDateString('nl-NL'))+'&body='+encodeURIComponent(lines.join('\n'));
-}
-
-function mailKlant(klant){
-  const items=allKlachten.filter(k=>k.klant===klant);
-  const lines=['Hoi Matthijs,','','Klachten voor '+klant+':',''];
-  items.forEach((k,i)=>{
-    lines.push((i+1)+'. '+(k.deal?k.deal+' — ':'')+SM[k.status].label);
-    lines.push('   '+k.samenvatting);
-    if(k.oplossing)lines.push('   Oplossing: '+k.oplossing);
-    lines.push('');
-  });
-  lines.push('Met vriendelijke groet,','Daniël');
-  location.href='mailto:matthijs@thebranding.club?subject='+encodeURIComponent('Klachten '+klant)+'&body='+encodeURIComponent(lines.join('\n'));
-}
-
-function fmt(d){return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',month:'short',year:'numeric'});}
-function esc(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+async function chRg(uid,rid){try{await api('PATCH','/rest/v1/profielen?id=eq.'+uid,{regio_id:rid?parseInt(rid):null});const u=Profielen.find(x=>x.id===uid);if(u)u.regio_id=rid?parseInt(rid):null;toast('Regio bijgewerkt.','ok');}catch(e){toast('Fout: '+e.message,'err');}}
+function openUM(){['us-n','us-e','us-p'].forEach(id=>document.getElementById(id).value='');document.getElementById('us-r').innerHTML='<option value="">— Geen —</option>'+Regios.map(r=>'<option value="'+ r.id +'">'+ r.naam +'</option>').join('');document.getElementById('ov-us').classList.add('open');}
+async function saveUser(){const n=v('us-n'),e=v('us-e'),p=document.getElementById('us-p').value,rid=document.getElementById('us-r').value;if(!n||!e||!p){toast('Vul naam, e-mail en wachtwoord in.');return;}if(p.length<6){toast('Minimaal 6 tekens.');return;}const btn=document.getElementById('btn-uss');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';try{const res=await aApi('POST','/auth/v1/admin/users',{email:e,password:p,email_confirm:true,user_metadata:{naam:n}},true);await api('POST','/rest/v1/profielen',{id:res.id,email:e,naam:n,rol:'gebruiker',regio_id:rid?parseInt(rid):null},true);Profielen.push({id:res.id,email:e,naam:n,rol:'gebruiker',regio_id:rid?parseInt(rid):null});co('ov-us');pgGebruikers();toast(n+' aangemaakt.','ok');}catch(e2){toast('Fout: '+e2.message,'err');}finally{btn.disabled=false;btn.innerHTML='Aanmaken';}}
+function openRS(uid,n){resetUID=uid;document.getElementById('rs-t').textContent='Reset — '+n;document.getElementById('rs-p').value='';document.getElementById('rs-p2').value='';document.getElementById('ov-rs').classList.add('open');}
+async function saveReset(){const p=document.getElementById('rs-p').value,p2=document.getElementById('rs-p2').value;if(!p||p.length<6){toast('Minimaal 6 tekens.');return;}if(p!==p2){toast('Wachtwoorden komen niet overeen.');return;}const btn=document.getElementById('btn-rss');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';try{await aApi('PUT','/auth/v1/admin/users/'+resetUID,{password:p},true);co('ov-rs');toast('Wachtwoord gewijzigd.','ok');}catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}}
 
 init();
 </script>

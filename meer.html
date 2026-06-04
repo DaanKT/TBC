@@ -120,7 +120,6 @@ textarea{resize:vertical;min-height:80px}
 <div class="content" id="content"><div class="empty"><span class="ld dk"></span></div></div>
 <nav class="bottom-nav">
   <button class="bn-item " onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
-  <button class="bn-item " onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span></button>
   <button class="bn-item " onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
   <button class="bn-item " onclick="location.href='levertijden.html'"><span class="ic">📦</span><span>Levertijd</span></button>
   <button class="bn-item " onclick="location.href='klachten.html'"><span class="ic">⚠️</span><span>Klachten</span></button>
@@ -363,33 +362,35 @@ function renderRegios(){
 function renderTargets(){
   let h=`<div style="display:flex;justify-content:flex-end;margin-bottom:.75rem"><button class="teal sm" onclick="openTM()">+ Target</button></div>`;
   
-  // Group by regio
   if(regios.length){
     regios.forEach(r=>{
       const rt=targets.filter(t=>t.type==='regio'&&t.regio_id===r.id);
-      const ru=profielen.filter(u=>u.regio_id===r.id);
+      const ru=profielen.filter(u=>u.regio_id===r.id&&u.rol==='gebruiker');
+      if(!rt.length&&!ru.length) return;
       h+=`<div class="section-label">${r.naam}</div><div class="card">`;
-      // Regio target
       if(rt.length) rt.forEach(t=>h+=targetRow(t,'regio',r.naam));
-      else h+=`<div style="padding:10px 16px;font-size:12px;color:var(--muted)">Geen regio-target</div>`;
-      // Per persoon
+      else h+=`<div style="padding:10px 16px;font-size:12px;color:var(--muted)">Geen regio-target · <button class="sm teal" onclick="openTMregio(${r.id})">+ Toevoegen</button></div>`;
       ru.forEach(u=>{
-        const ut=targets.filter(t=>t.type==='persoon'&&t.user_id===u.id);
-        if(ut.length) ut.forEach(t=>h+=targetRow(t,'persoon',u.naam||u.email));
-        else h+=`<div style="padding:8px 16px;font-size:12px;color:var(--muted)">↳ ${u.naam||u.email}: geen persoonlijk target</div>`;
+        // Only show most recent target per user per periode
+        const ut=targets.filter(t=>t.type==='persoon'&&t.user_id===u.id).sort((a,b)=>b.periode.localeCompare(a.periode));
+        if(ut.length) ut.slice(0,1).forEach(t=>h+=targetRow(t,'persoon',u.naam||u.email));
+        else h+=`<div style="padding:8px 16px;font-size:12px;color:var(--muted)">↳ ${u.naam||u.email}: geen target</div>`;
       });
       h+=`</div>`;
     });
   }
-  // Targets without region
-  const noReg=targets.filter(t=>!regios.find(r=>r.id===t.regio_id)&&t.type==='persoon');
-  if(noReg.length){
-    h+=`<div class="section-label">Zonder regio</div><div class="card">`;
-    noReg.forEach(t=>{const u=profielen.find(x=>x.id===t.user_id);h+=targetRow(t,'persoon',u?u.naam||u.email:'?');});
-    h+=`</div>`;
-  }
   if(!regios.length&&!targets.length) h+=`<div class="empty">Geen targets.</div>`;
   return h;
+}
+
+function openTMregio(regioId){
+  document.getElementById('tg-tp').value='regio';
+  document.getElementById('tg-rw').style.display='block';
+  document.getElementById('tg-uw').style.display='none';
+  document.getElementById('tg-r').innerHTML=regios.map(r=>`<option value="${r.id}"${r.id===regioId?' selected':''}>${r.naam}</option>`).join('');
+  document.getElementById('tg-p').value=nowM();
+  document.getElementById('tg-o').value='';
+  document.getElementById('ov-tg').classList.add('open');
 }
 
 function targetRow(t,type,naam){
@@ -507,6 +508,19 @@ async function delTg(id){
     targets=targets.filter(t=>t.id!==id);
     render();toast('Verwijderd.');
   }catch(e){toast('Fout: '+e.message,'err');}
+}
+
+function openEditU(btn){
+  const id=btn.dataset.id,naam=btn.dataset.naam,email=btn.dataset.email,rol=btn.dataset.rol,regioId=btn.dataset.regio;
+  document.getElementById('um-id').value=id;
+  document.getElementById('um-n').value=naam;
+  document.getElementById('um-e').value=email;
+  document.getElementById('um-p').value='';
+  document.getElementById('um-rol').value=rol;
+  document.getElementById('um-r').innerHTML='<option value="">— Geen —</option>'+regios.map(r=>`<option value="${r.id}"${r.id==regioId?' selected':''}>${r.naam}</option>`).join('');
+  document.getElementById('um-mt').textContent='Gebruiker bewerken';
+  document.getElementById('um-p-wrap').style.display='none';
+  document.getElementById('ov-um').classList.add('open');
 }
 
 init();

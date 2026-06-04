@@ -290,20 +290,21 @@ async function loadData(){
   if(isA){
     profielen=await api('GET','/rest/v1/profielen')||[];
     adminRegios=isSuperAdmin(me)?regios.map(r=>({regio_id:r.id})):await api('GET','/rest/v1/admin_regios?user_id=eq.'+me.id)||[];
+  } else {
+    // Laad alle collega's van dezelfde regio voor de regio widget
+    if(me.regio_id){
+      profielen=await api('GET','/rest/v1/profielen?regio_id=eq.'+me.regio_id+'&rol=eq.gebruiker')||[];
+    }
   }
-  const myRegioIds=isSuperAdmin(me)?regios.map(r=>r.id):isRegioAdmin(me)?adminRegios.map(r=>r.regio_id):[me.regio_id];
-  const cu=isA
-    ?'/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email,regio_id)'
-    :'/rest/v1/commitments?user_id=eq.'+me.id+'&order=datum.desc';
-  commits=await api('GET',cu)||[];
-  const du=isA
-    ?'/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email,regio_id)'
-    :'/rest/v1/dagrapporten?user_id=eq.'+me.id+'&order=datum.desc';
-  dagrapporten=await api('GET',du)||[];
-  const corrU=isA
-    ?'/rest/v1/correcties?datum=gte.'+m+'-01&order=aangemaakt_op.desc'
-    :'/rest/v1/correcties?user_id=eq.'+me.id+'&datum=gte.'+m+'-01';
-  correcties=await api('GET',corrU)||[];
+  // Build list of user IDs to load data for
+  const allIds=isA?null:[...new Set([me.id,...profielen.map(u=>u.id)])];
+  const idsQ=allIds?'&user_id=in.('+allIds.join(',')+')'
+  :'&select=*,profielen(naam,email,regio_id)';
+  
+  commits=await api('GET','/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc'+idsQ)||[];
+  dagrapporten=await api('GET','/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc'+idsQ)||[];
+  correcties=await api('GET','/rest/v1/correcties?datum=gte.'+m+'-01&order=aangemaakt_op.desc'+(allIds?'&user_id=in.('+allIds.join(',')+')'
+  :''))||[];
 }
 
 function checkBadges(){

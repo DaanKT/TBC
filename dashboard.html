@@ -26,17 +26,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .bn-item.active{color:var(--teal)}
 .bn-item .ic{font-size:20px;line-height:1}
 .bn-badge{position:absolute;top:6px;right:calc(50% - 18px);background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px}
-.content{padding:1rem;max-width:600px;margin:0 auto}
+.content{padding:1rem;max-width:720px;margin:0 auto}
 .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
 .page-title{font-size:18px;font-weight:700}
 .page-sub{font-size:13px;color:var(--muted);margin-top:2px}
 .stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.25rem}
-.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px}
 .stat.click{cursor:pointer;transition:border-color .15s}
 .stat.click:hover,.stat.act{border-color:var(--teal);background:#f0fdf9}
-.sv{font-size:22px;font-weight:700;line-height:1}
-.sl{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
-.ss{font-size:12px;color:var(--muted);margin-top:4px}
+.sv{font-size:20px;font-weight:700;line-height:1.1}
+.ss{font-size:12px;color:var(--muted);margin-top:4px}.sl{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
 .cr{color:var(--red)}.ca{color:var(--amber)}.cg{color:var(--green)}.cb{color:var(--blue)}.cn{color:var(--navy)}
 button{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:var(--rs);border:1px solid var(--border);background:var(--card);color:var(--text);padding:7px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .12s}
 button:hover{background:#f0f2f5}
@@ -296,15 +295,38 @@ async function loadData(){
       profielen=await api('GET','/rest/v1/profielen?regio_id=eq.'+me.regio_id+'&rol=eq.gebruiker')||[];
     }
   }
-  // Build list of user IDs to load data for
-  const allIds=isA?null:[...new Set([me.id,...profielen.map(u=>u.id)])];
-  const idsQ=allIds?'&user_id=in.('+allIds.join(',')+')'
-  :'&select=*,profielen(naam,email,regio_id)';
-  
-  commits=await api('GET','/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc'+idsQ)||[];
-  dagrapporten=await api('GET','/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc'+idsQ)||[];
-  correcties=await api('GET','/rest/v1/correcties?datum=gte.'+m+'-01&order=aangemaakt_op.desc'+(allIds?'&user_id=in.('+allIds.join(',')+')'
-  :''))||[];
+
+  if(isA){
+    commits=await api('GET','/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email,regio_id)')||[];
+    dagrapporten=await api('GET','/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email,regio_id)')||[];
+    correcties=await api('GET','/rest/v1/correcties?datum=gte.'+m+'-01&order=aangemaakt_op.desc')||[];
+  } else if(me.regio_id){
+    // Laad alle data van de regio via regio_id filter - simpelst en meest betrouwbaar
+    const regioProfielIds=profielen.map(u=>u.id);
+    // Own data
+    const myCommits=await api('GET','/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc&user_id=eq.'+me.id)||[];
+    const myDags=await api('GET','/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc&user_id=eq.'+me.id)||[];
+    const myCorr=await api('GET','/rest/v1/correcties?datum=gte.'+m+'-01&user_id=eq.'+me.id)||[];
+    // Collega data - load each separately and merge
+    let collegaCommits=[], collegaDags=[], collegaCorr=[];
+    for(const uid of regioProfielIds){
+      if(uid===me.id) continue;
+      const cc=await api('GET','/rest/v1/commitments?datum=gte.'+m+'-01&user_id=eq.'+uid)||[];
+      const cd=await api('GET','/rest/v1/dagrapporten?datum=gte.'+m+'-01&user_id=eq.'+uid)||[];
+      const cr=await api('GET','/rest/v1/correcties?datum=gte.'+m+'-01&user_id=eq.'+uid)||[];
+      collegaCommits=[...collegaCommits,...cc];
+      collegaDags=[...collegaDags,...cd];
+      collegaCorr=[...collegaCorr,...cr];
+    }
+    commits=[...myCommits,...collegaCommits];
+    dagrapporten=[...myDags,...collegaDags];
+    correcties=[...myCorr,...collegaCorr];
+  } else {
+    // No regio - only own data
+    commits=await api('GET','/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc&user_id=eq.'+me.id)||[];
+    dagrapporten=await api('GET','/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc&user_id=eq.'+me.id)||[];
+    correcties=await api('GET','/rest/v1/correcties?datum=gte.'+m+'-01&user_id=eq.'+me.id)||[];
+  }
 }
 
 function checkBadges(){
@@ -362,7 +384,7 @@ function renderMedewerker(){
   // ── GISTEREN COMMIT BEVESTIGEN ──
   if(ystCommit){
     h+=`<div style="background:linear-gradient(135deg,#0B1F3A,#1E3A5F);border-radius:var(--r);padding:16px;margin-bottom:1rem">
-      <div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Goedemorgen ${me.naam?.split(' ')[0]||''}! 👋</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${new Date().getHours()<12?'Goedemorgen':new Date().getHours()<18?'Goedemiddag':'Goedenavond'} ${me.naam?.split(' ')[0]||''}! ${new Date().getHours()<12?'☀️':new Date().getHours()<18?'👋':'🌙'}</div>
       <div style="font-size:15px;font-weight:600;color:#fff;margin-bottom:4px">Je commit was <span style="color:#4FD1A5">${eur(ystCommit.omzet_forecast)}</span> — gehaald?</div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <button onclick="quickBev(${ystCommit.id})" style="background:#4FD1A5;color:#0B1F3A;border:none;border-radius:var(--rs);padding:10px;font-size:13px;font-weight:700;flex:1;cursor:pointer">✓ Ja!</button>

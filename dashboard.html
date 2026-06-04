@@ -309,7 +309,7 @@ async function loadData(){
     :'/rest/v1/dagrapporten?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=datum.desc';
   dagrapporten=await api('GET',du)||[];
   const corrU=isA
-    ?'/rest/v1/correcties?datum=gte.'+m+'-01&order=aangemaakt_op.desc&select=*,profielen(naam,email)'
+    ?'/rest/v1/correcties?datum=gte.'+m+'-01&order=aangemaakt_op.desc'
     :'/rest/v1/correcties?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=aangemaakt_op.desc';
   correcties=await api('GET',corrU)||[];
   if(isA) profielen=await api('GET','/rest/v1/profielen')||[];

@@ -236,6 +236,8 @@ async function checkAuth(){
   }
 }
 function isAdmin(me){return me&&me.rol==='admin';}
+function isRegioAdmin(me){return me&&(me.rol==='admin'||me.rol==='regio_admin');}
+function isSuperAdmin(me){return me&&me.rol==='admin';}
 
 
 let me=null, commits=[], dagrapporten=[], profielen=[], regios=[];

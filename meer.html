@@ -136,7 +136,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="field"><label>Naam *</label><input type="text" id="um-n"/></div>
 <div class="field"><label>E-mail</label><input type="email" id="um-e"/></div>
 <div id="um-p-wrap" class="field"><label>Wachtwoord *</label><input type="password" id="um-p" placeholder="minimaal 6 tekens"/></div>
-<div class="field"><label>Rol</label><select id="um-rol"><option value="gebruiker">Gebruiker</option><option value="admin">Admin</option></select></div>
+<div class="field"><label>Rol</label><select id="um-rol"><option value="gebruiker">Gebruiker</option><option value="regio_admin">Regio admin</option><option value="admin">Super admin</option></select></div>
 <div class="field"><label>Regio</label><select id="um-r"><option value="">— Geen —</option></select></div>
 <div class="mf"><button onclick="document.getElementById('ov-um').classList.remove('open')">Annuleren</button><button class="teal" id="btn-um-s" onclick="saveUser()">Opslaan</button></div>
 </div></div>
@@ -234,10 +234,14 @@ async function checkAuth(){
   }
 }
 function isAdmin(me){return me&&me.rol==='admin';}
+function isRegioAdmin(me){return me&&(me.rol==='admin'||me.rol==='regio_admin');}
+function isSuperAdmin(me){return me&&me.rol==='admin';}
 
 
 let me=null, profielen=[], regios=[], targets=[];
 let editRegioId=null, resetUID=null;
+
+let adminRegioMap={};
 
 async function init(){
   me=await checkAuth(); if(!me)return;
@@ -246,8 +250,33 @@ async function init(){
     regios=await api('GET','/rest/v1/regios?order=naam.asc')||[];
     targets=await api('GET','/rest/v1/targets?order=periode.desc')||[];
     profielen=await api('GET','/rest/v1/profielen')||[];
+    await loadAdminRegios();
   }
   render();
+}
+
+async function loadAdminRegios(){
+  const ar=await api('GET','/rest/v1/admin_regios')||[];
+  adminRegioMap={};
+  ar.forEach(x=>{
+    if(!adminRegioMap[x.user_id]) adminRegioMap[x.user_id]=[];
+    adminRegioMap[x.user_id].push(x.regio_id);
+  });
+}
+
+async function toggleAdminRegio(userId, regioId, hasIt){
+  try{
+    if(hasIt){
+      await api('DELETE',`/rest/v1/admin_regios?user_id=eq.${userId}&regio_id=eq.${regioId}`);
+      if(adminRegioMap[userId]) adminRegioMap[userId]=adminRegioMap[userId].filter(r=>r!==regioId);
+    } else {
+      await api('POST','/rest/v1/admin_regios',{user_id:userId,regio_id:regioId});
+      if(!adminRegioMap[userId]) adminRegioMap[userId]=[];
+      adminRegioMap[userId].push(regioId);
+    }
+    activeTab='gebruikers';render();
+    toast(hasIt?'Regio ontkoppeld.':'Regio gekoppeld.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}
 }
 
 let activeTab='kpi';
@@ -290,11 +319,29 @@ function renderGebruikers(){
   if(!profielen.length) h+=`<div class="empty">Geen gebruikers.</div>`;
   profielen.forEach(u=>{
     const reg=regios.find(r=>r.id===u.regio_id);
-    h+=`<div class="card-row"><div><div class="row-main">${u.naam||u.email}</div><div class="row-sub">${u.email} · ${reg?reg.naam:'Geen regio'}</div></div>
-    <div class="row-right">
-      <span class="badge ${u.rol==='admin'?'b-admin':'b-user'}">${u.rol}</span>
-      <button class="sm" onclick="openEditU(this)" data-id="${u.id}" data-naam="${esc(u.naam||u.email)}" data-email="${esc(u.email)}" data-rol="${u.rol}" data-regio="${u.regio_id||''}">✏️</button>
-    </div></div>`;
+    const isRA=u.rol==='regio_admin';
+    const uAR=adminRegioMap[u.id]||[];
+    const rNames=uAR.map(rid=>regios.find(r=>r.id===rid)?.naam).filter(Boolean);
+    const rolLabel=u.rol==='admin'?'Super admin':u.rol==='regio_admin'?'Regio admin':'Gebruiker';
+    const rolBadge=u.rol==='admin'?'b-admin':u.rol==='regio_admin'?'b-behandeling':'b-user';
+    h+=`<div style="padding:12px 16px;border-bottom:0.5px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${isRA?'10px':'0'}">
+        <div>
+          <div class="row-main">${u.naam||u.email}</div>
+          <div class="row-sub">${u.email} · ${reg?reg.naam:'Geen regio'}${isRA&&rNames.length?' · Beheert: '+rNames.join(', '):''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge ${rolBadge}">${rolLabel}</span>
+          <button class="sm" onclick="openEditU(this)" data-id="${u.id}" data-naam="${esc(u.naam||u.email)}" data-email="${esc(u.email)}" data-rol="${u.rol}" data-regio="${u.regio_id||''}">✏️</button>
+        </div>
+      </div>
+      ${isRA?`<div style="background:var(--bg);border-radius:var(--rs);padding:10px 12px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Regio toegang</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${regios.map(r=>{const has=uAR.includes(r.id);return `<button class="sm${has?' teal':''}" onclick="toggleAdminRegio(&quot;${u.id}&quot;,${r.id},${has})">${r.naam}</button>`;}).join('')}
+        </div>
+      </div>`:''}
+    </div>`;
   });
   h+=`</div>`;
   return h;

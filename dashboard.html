@@ -111,7 +111,7 @@ textarea{resize:vertical;min-height:80px}
 .bottom-nav::-webkit-scrollbar{display:none}
 .bn-item{min-width:64px;flex-shrink:0}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-:root{--bg:#f0f2f5}
+:root{--bg:#f0f2f5;--teal:#4FD1A5;--green:#16a34a;--red:#dc2626;--amber:#d97706}
 </style>
 </head>
 <body>
@@ -122,7 +122,6 @@ textarea{resize:vertical;min-height:80px}
 <div class="content" id="content"><div class="empty"><span class="ld dk"></span><br><br>Laden...</div></div>
 <nav class="bottom-nav">
   <button class="bn-item active" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
-  <button class="bn-item" onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span><span class="bn-badge" id="bn-dag" style="display:none">!</span></button>
   <button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
   <button class="bn-item" onclick="location.href='levertijden.html'"><span class="ic">📦</span><span>Levertijd</span></button>
   <button class="bn-item" onclick="location.href='klachten.html'"><span class="ic">⚠️</span><span>Klachten</span></button>
@@ -130,7 +129,14 @@ textarea{resize:vertical;min-height:80px}
 </nav>
 <div class="tw" id="tw"></div>
 
-<!-- Admin commit -->
+<div class="overlay" id="ov-bev" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal"><div class="modal-handle"></div>
+<div class="mt">Commitment bevestigen</div>
+<div class="ms">Forecast: <strong id="bv-forecast"></strong></div>
+<div class="field"><label>Werkelijke omzet (€) *</label><input type="number" id="bv-o" placeholder="0" min="0" step="100"/></div>
+<div class="mf"><button onclick="document.getElementById('ov-bev').classList.remove('open')">Annuleren</button><button class="teal" id="btn-bv-s" onclick="saveBev()">Bevestigen</button></div>
+</div></div>
+
 <div class="overlay" id="ov-ac" onclick="if(event.target===this)this.classList.remove('open')">
 <div class="modal"><div class="modal-handle"></div>
 <div class="mt">Commitment invoeren</div>
@@ -140,7 +146,6 @@ textarea{resize:vertical;min-height:80px}
 <div class="mf"><button onclick="document.getElementById('ov-ac').classList.remove('open')">Annuleren</button><button class="teal" id="btn-ac-s" onclick="saveAdminCommit()">Opslaan</button></div>
 </div></div>
 
-<!-- Target edit -->
 <div class="overlay" id="ov-te" onclick="if(event.target===this)this.classList.remove('open')">
 <div class="modal"><div class="modal-handle"></div>
 <div class="mt">Maandtarget aanpassen</div>
@@ -151,23 +156,22 @@ textarea{resize:vertical;min-height:80px}
 <div class="mf"><button onclick="document.getElementById('ov-te').classList.remove('open')">Annuleren</button><button class="teal" id="btn-te-s" onclick="saveTargetEdit()">Opslaan</button></div>
 </div></div>
 
-<!-- Correctie maandstand -->
 <div class="overlay" id="ov-cr" onclick="if(event.target===this)this.classList.remove('open')">
 <div class="modal"><div class="modal-handle"></div>
 <div class="mt">Maandstand corrigeren</div>
 <div class="ms">Voor: <strong id="cr-naam"></strong> · Huidig: <strong id="cr-huidig"></strong></div>
 <div class="field"><label>Correctiebedrag (€) *</label><input type="number" id="cr-b" placeholder="+500 of -200" step="100"/><div style="font-size:12px;color:var(--muted);margin-top:4px">Positief = optellen · Negatief = aftrekken</div></div>
-<div class="field"><label>Reden * (verplicht)</label><input type="text" id="cr-r" placeholder="bijv. Correctie factuurfout"/></div>
+<div class="field"><label>Reden * (verplicht)</label><input type="text" id="cr-r" placeholder="bijv. Factuurfout gecorrigeerd"/></div>
 <div class="mf"><button onclick="document.getElementById('ov-cr').classList.remove('open')">Annuleren</button><button class="teal" id="btn-cr-s" onclick="saveCorrectie()">Opslaan</button></div>
 </div></div>
 
-<!-- Bevestig commit -->
-<div class="overlay" id="ov-bev" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="overlay" id="ov-ec" onclick="if(event.target===this)this.classList.remove('open')">
 <div class="modal"><div class="modal-handle"></div>
-<div class="mt">Commitment bevestigen</div>
-<div class="ms">Forecast was: <strong id="bv-forecast"></strong></div>
-<div class="field"><label>Werkelijke omzet (€) *</label><input type="number" id="bv-o" placeholder="0" min="0" step="100"/></div>
-<div class="mf"><button onclick="document.getElementById('ov-bev').classList.remove('open')">Annuleren</button><button class="teal" id="btn-bv-s" onclick="saveBev()">Bevestigen</button></div>
+<div class="mt">Commit bewerken</div>
+<div class="ms">Van: <strong id="ec-naam"></strong></div>
+<div class="field"><label>Datum</label><input type="date" id="ec-d"/></div>
+<div class="field"><label>Bedrag (€)</label><input type="number" id="ec-o" min="0" step="100"/></div>
+<div class="mf"><button onclick="document.getElementById('ov-ec').classList.remove('open')">Annuleren</button><button class="teal" id="btn-ec-s" onclick="saveEditCommit()">Opslaan</button></div>
 </div></div>
 
 <script>
@@ -243,126 +247,128 @@ async function checkAuth(){
   }
 }
 function isAdmin(me){return me&&me.rol==='admin';}
+function isRegioAdmin(me){return me&&(me.rol==='admin'||me.rol==='regio_admin');}
+function isSuperAdmin(me){return me&&me.rol==='admin';}
 
 
-function getWerkdagen(jaar, maand) {
-  // maand is 1-based
-  const dagen = new Date(jaar, maand, 0).getDate();
-  let werkdagen = 0;
-  for(let d=1; d<=dagen; d++) {
-    const dag = new Date(jaar, maand-1, d).getDay();
-    if(dag !== 0 && dag !== 6) werkdagen++;
-  }
-  return werkdagen;
+function getWerkdagen(jaar,maand){
+  const dagen=new Date(jaar,maand,0).getDate();
+  let w=0;
+  for(let d=1;d<=dagen;d++){const dg=new Date(jaar,maand-1,d).getDay();if(dg!==0&&dg!==6)w++;}
+  return w;
 }
-
-function getWerkdagenTotVandaag(jaar, maand, dagVanMaand) {
-  let werkdagen = 0;
-  for(let d=1; d<=dagVanMaand; d++) {
-    const dag = new Date(jaar, maand-1, d).getDay();
-    if(dag !== 0 && dag !== 6) werkdagen++;
-  }
-  return werkdagen;
+function getWerkdagenTot(jaar,maand,dagVanMaand){
+  let w=0;
+  for(let d=1;d<=dagVanMaand;d++){const dg=new Date(jaar,maand-1,d).getDay();if(dg!==0&&dg!==6)w++;}
+  return w;
 }
-
-function getRestWerkdagen(jaar, maand, dagVanMaand) {
-  const totaal = new Date(jaar, maand, 0).getDate();
-  let werkdagen = 0;
-  for(let d=dagVanMaand+1; d<=totaal; d++) {
-    const dag = new Date(jaar, maand-1, d).getDay();
-    if(dag !== 0 && dag !== 6) werkdagen++;
-  }
-  return werkdagen;
+function getRestWerkdagen(jaar,maand,dagVanMaand){
+  const totaal=new Date(jaar,maand,0).getDate();
+  let w=0;
+  for(let d=dagVanMaand+1;d<=totaal;d++){const dg=new Date(jaar,maand-1,d).getDay();if(dg!==0&&dg!==6)w++;}
+  return w;
 }
+function getYesterday(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
 
-function isWerkdag(date) {
-  const dag = date.getDay();
-  return dag !== 0 && dag !== 6;
-}
-
-let me=null, regios=[], targets=[], commits=[], dagrapporten=[], profielen=[], correcties=[];
-let corrUserId=null, corrUserNaam=null;
-let adminCommitUserId=null, adminCommitUserNaam=null;
-let targetEditUserId=null;
-let bevId=null;
+let me=null,regios=[],targets=[],commits=[],dagrapporten=[],profielen=[],correcties=[],adminRegios=[];
+let bevCommitId=null,adminCommitUID=null,adminCommitNaam=null,targetEditUID=null,corrUID=null,corrNaam=null;
+let openMedewerker=null;
 
 async function init(){
-  me=await checkAuth(); if(!me)return;
-  document.getElementById('topbar-user').textContent=(me.naam||me.email)+(isAdmin(me)?' (Admin)':'');
+  me=await checkAuth();if(!me)return;
+  document.getElementById('topbar-user').textContent=(me.naam||me.email)+(isSuperAdmin(me)?' (Admin)':isRegioAdmin(me)?' (Regio-admin)':'');
   await loadData();
   checkBadges();
-  if(isAdmin(me)) renderAdmin();
+  if(isRegioAdmin(me)) renderAdmin();
   else renderMedewerker();
 }
 
 async function loadData(){
-  const isA=isAdmin(me); const m=nowM();
-  const [y,mo]=m.split('-').map(Number);
+  const isA=isRegioAdmin(me); const m=nowM();
   regios=await api('GET','/rest/v1/regios?order=naam.asc')||[];
   targets=await api('GET','/rest/v1/targets?order=periode.desc')||[];
+  if(isA){
+    profielen=await api('GET','/rest/v1/profielen')||[];
+    adminRegios=isSuperAdmin(me)?regios.map(r=>({regio_id:r.id})):await api('GET','/rest/v1/admin_regios?user_id=eq.'+me.id)||[];
+  }
+  const myRegioIds=isSuperAdmin(me)?regios.map(r=>r.id):isRegioAdmin(me)?adminRegios.map(r=>r.regio_id):[me.regio_id];
   const cu=isA
     ?'/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email,regio_id)'
-    :'/rest/v1/commitments?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=datum.desc';
+    :'/rest/v1/commitments?user_id=eq.'+me.id+'&order=datum.desc';
   commits=await api('GET',cu)||[];
   const du=isA
     ?'/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email,regio_id)'
-    :'/rest/v1/dagrapporten?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=datum.desc';
+    :'/rest/v1/dagrapporten?user_id=eq.'+me.id+'&order=datum.desc';
   dagrapporten=await api('GET',du)||[];
   const corrU=isA
     ?'/rest/v1/correcties?datum=gte.'+m+'-01&order=aangemaakt_op.desc'
-    :'/rest/v1/correcties?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=aangemaakt_op.desc';
+    :'/rest/v1/correcties?user_id=eq.'+me.id+'&datum=gte.'+m+'-01';
   correcties=await api('GET',corrU)||[];
-  if(isA) profielen=await api('GET','/rest/v1/profielen')||[];
 }
 
 function checkBadges(){
-  const today=nowD(); const hr=new Date().getHours();
+  const today=nowD();const hr=new Date().getHours();
   const myDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
   const bn=document.getElementById('bn-dag');
-  if(bn) bn.style.display=(!myDag&&hr>=16)?'block':'none';
+  if(bn)bn.style.display=(!myDag&&hr>=16)?'block':'none';
 }
 
 function calcActuals(userId){
   const m=nowM();
   const dags=dagrapporten.filter(d=>d.user_id===userId&&d.datum.startsWith(m));
-  const dagActuals=dags.reduce((s,d)=>s+(d.productie_vandaag||0),0);
-  const corrActuals=correcties.filter(c=>c.user_id===userId).reduce((s,c)=>s+(c.bedrag||0),0);
-  return dagActuals+corrActuals;
+  const dagA=dags.reduce((s,d)=>s+(d.productie_vandaag||0),0);
+  const corrA=correcties.filter(c=>c.user_id===userId).reduce((s,c)=>s+(c.bedrag||0),0);
+  return dagA+corrA;
 }
 
 function calcStreak(userId){
   const bev=commits.filter(c=>c.user_id===userId&&c.bevestigd).sort((a,b)=>b.datum.localeCompare(a.datum));
-  let streak=0;
-  for(const c of bev){ if(c.gehaald) streak++; else break; }
-  return streak;
+  let s=0;for(const c of bev){if(c.gehaald)s++;else break;}return s;
 }
 
 // ── MEDEWERKER VIEW ───────────────────────────────────────
 function renderMedewerker(){
-  const m=nowM(); const today=nowD();
-  const [y,mo]=m.split('-').map(Number);
-  const dagVanMaand=new Date().getDate();
-  const werkdagenTotaal=getWerkdagen(y,mo);
-  const werkdagenTot=getWerkdagenTotVandaag(y,mo,dagVanMaand);
-  const werkdagenRest=getRestWerkdagen(y,mo,dagVanMaand);
+  const m=nowM();const today=nowD();const yesterday=getYesterday();
+  const[y,mo]=m.split('-').map(Number);
+  const dagVM=new Date().getDate();
+  const wTot=getWerkdagen(y,mo);
+  const wTotNu=getWerkdagenTot(y,mo,dagVM);
+  const wRest=getRestWerkdagen(y,mo,dagVM);
   const myTarget=targets.find(t=>t.type==='persoon'&&t.user_id===me.id&&t.periode===m);
   const actuals=calcActuals(me.id);
   const target=myTarget?.omzet_target||0;
-  const perDag=target?Math.round(target/werkdagenTotaal):0;
-  const verwacht=perDag*werkdagenTot;
-  const achterstand=verwacht-actuals;
-  const nuNodigPerDag=werkdagenRest>0?Math.round((target-actuals)/werkdagenRest):0;
-  const maandPct=Math.round((werkdagenTot/werkdagenTotaal)*100);
+  const perDag=target?Math.round(target/wTot):0;
+  const verwacht=perDag*wTotNu;
+  const achter=verwacht-actuals;
+  const nuNodig=wRest>0&&target?Math.round((target-actuals)/wRest):0;
+  const maandPct=Math.round((wTotNu/wTot)*100);
   const actualsPct=target?pct(actuals,target):0;
   const onTrack=actualsPct>=maandPct;
   const streak=calcStreak(me.id);
   const myReg=regios.find(r=>r.id===me.regio_id);
-  const yesterday=getYesterday();
-  const ystDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===yesterday);
   const todayDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
+  const ystDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===yesterday);
+  // Yesterday's commit to confirm
+  const ystCommit=commits.find(c=>c.user_id===me.id&&c.datum===today&&!c.bevestigd)
+    ||commits.find(c=>c.user_id===me.id&&c.datum===yesterday&&!c.bevestigd);
+  const isAchter=achter>0&&target>0;
+  const achterPct=target?Math.round((achter/target)*100):0;
+  const notitieVerplicht=achterPct>=15;
 
   document.getElementById('tbr').innerHTML='';
   let h='';
+
+  // ── GISTEREN COMMIT BEVESTIGEN ──
+  if(ystCommit){
+    h+=`<div style="background:linear-gradient(135deg,#0B1F3A,#1E3A5F);border-radius:var(--r);padding:16px;margin-bottom:1rem">
+      <div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Goedemorgen ${me.naam?.split(' ')[0]||''}! 👋</div>
+      <div style="font-size:15px;font-weight:600;color:#fff;margin-bottom:4px">Je commit was <span style="color:#4FD1A5">${eur(ystCommit.omzet_forecast)}</span> — gehaald?</div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button onclick="quickBev(${ystCommit.id})" style="background:#4FD1A5;color:#0B1F3A;border:none;border-radius:var(--rs);padding:10px;font-size:13px;font-weight:700;flex:1;cursor:pointer">✓ Ja!</button>
+        <button onclick="openBevModal(${ystCommit.id})" style="background:rgba(255,255,255,.1);color:#fff;border:0.5px solid rgba(255,255,255,.2);border-radius:var(--rs);padding:10px;font-size:13px;flex:1;cursor:pointer">Gedeeltelijk</button>
+      </div>
+    </div>`;
+  }
 
   // ── ON TRACK BANNER ──
   if(target>0){
@@ -372,7 +378,7 @@ function renderMedewerker(){
     h+=`<div style="background:${col};border:0.5px solid ${onTrack?'#C0DD97':'#F7C1C1'};border-radius:var(--r);padding:14px 16px;margin-bottom:1rem">
       <div style="font-size:14px;font-weight:600;color:${tcol};margin-bottom:8px">${onTrack?'🟢 On track!':'🔴 Let op: je loopt achter'}</div>
       <div style="display:flex;justify-content:space-between;font-size:11px;color:${tcol};margin-bottom:5px">
-        <span>Maandvoortgang ${maandPct}% (dag ${werkdagenTot} van ${werkdagenTotaal} werkdagen)</span>
+        <span>Dag ${wTotNu}/${wTot} werkdagen (${maandPct}%)</span>
         <span>Bereikt ${actualsPct}%</span>
       </div>
       <div style="height:10px;background:rgba(0,0,0,.1);border-radius:99px;overflow:hidden;position:relative">
@@ -382,44 +388,42 @@ function renderMedewerker(){
     </div>`;
   }
 
-  // ── STATS GRID ──
+  // ── STATS ──
   h+=`<div class="stats-row">
-    <div class="stat"><div class="sv cn">${eur(actuals)}</div><div class="sl">Actuals</div><div class="ss">Target: ${eur(target)}</div></div>
-    <div class="stat"><div class="sv ${achterstand>0?'cr':'cg'}">${achterstand>0?'-':'+'}${eur(Math.abs(achterstand))}</div><div class="sl">${achterstand>0?'Achterstand':'Voorsprong'}</div><div class="ss">Verwacht: ${eur(verwacht)}</div></div>
-    <div class="stat"><div class="sv ca">${eur(perDag)}</div><div class="sl">Per werkdag nodig</div><div class="ss">Basis target</div></div>
-    <div class="stat"><div class="sv ${nuNodigPerDag>perDag?'cr':'cg'}">${eur(nuNodigPerDag)}</div><div class="sl">Nu nodig/dag</div><div class="ss">${werkdagenRest} werkdagen rest</div></div>
+    <div class="stat"><div class="sv cn">${eur(actuals)}</div><div class="sl">Actuals</div><div class="ss">${target?'Target: '+eur(target):'Geen target'}</div></div>
+    <div class="stat"><div class="sv ${isAchter?'cr':'cg'}">${isAchter?'-':'+'}${eur(Math.abs(achter))}</div><div class="sl">${isAchter?'Achterstand':'Voorsprong'}</div><div class="ss">Verwacht: ${eur(verwacht)}</div></div>
+    <div class="stat"><div class="sv ca">${eur(perDag)}</div><div class="sl">Per werkdag</div><div class="ss">Basis target</div></div>
+    <div class="stat"><div class="sv ${nuNodig>perDag?'cr':'cg'}">${eur(nuNodig)}</div><div class="sl">Nu/dag nodig</div><div class="ss">${wRest} werkdagen rest</div></div>
   </div>`;
 
-  // ── STREAK ──
   if(streak>0){
     h+=`<div style="background:linear-gradient(135deg,#0B1F3A,#1E3A5F);border-radius:var(--r);padding:12px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:12px">
-      <div style="font-size:28px">🔥</div>
-      <div><div style="font-size:15px;font-weight:600;color:#fff">${streak} dag${streak!==1?'en':''} op rij target gehaald</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">Ga zo door!</div></div>
+      <div style="font-size:26px">🔥</div>
+      <div><div style="font-size:14px;font-weight:600;color:#fff">${streak} dag${streak!==1?'en':''} op rij gehaald</div><div style="font-size:12px;color:rgba(255,255,255,.5)">Ga zo door!</div></div>
     </div>`;
   }
 
   // ── REGIO WIDGET ──
   if(myReg){
     const regTarget=targets.find(t=>t.type==='regio'&&t.regio_id===myReg.id&&t.periode===m);
-    const regUsers=profielen.length?profielen.filter(u=>u.regio_id===myReg.id):[{id:me.id,naam:me.naam,email:me.email}];
-    const regActuals=regUsers.reduce((s,u)=>s+calcActuals(u.id),0);
-    const regTarget2=regTarget?.omzet_target||0;
-    const regPct=regTarget2?pct(regActuals,regTarget2):0;
+    const regUsers=profielen.length?profielen.filter(u=>u.regio_id===myReg.id&&u.rol==='gebruiker'):[];
+    const regActuals=(regUsers.length?regUsers:([{id:me.id}])).reduce((s,u)=>s+calcActuals(u.id),0);
+    const regT=regTarget?.omzet_target||0;
+    const regPct=regT?pct(regActuals,regT):0;
     h+=`<div class="section-label">Regio ${myReg.naam}</div>
     <div class="card" style="margin-bottom:1rem">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div><div style="font-size:18px;font-weight:600">${eur(regActuals)}</div><div style="font-size:12px;color:var(--muted)">Regio actuals${regTarget2?' · target: '+eur(regTarget2):''}</div></div>
-        ${regTarget2?`<span style="font-size:16px;font-weight:700;color:${regPct>=maandPct?'var(--green)':'var(--red)'}">${regPct}%</span>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div><div style="font-size:18px;font-weight:600">${eur(regActuals)}</div><div style="font-size:12px;color:var(--muted)">${regT?'Target: '+eur(regT):'Geen regio-target'}</div></div>
+        ${regT?`<span style="font-size:16px;font-weight:700;color:${regPct>=maandPct?'var(--green)':'var(--red)'}">${regPct}%</span>`:''}
       </div>
-      ${regUsers.map(u=>{
+      ${(regUsers.length?regUsers:[{id:me.id,naam:me.naam,email:me.email}]).map(u=>{
         const ua=calcActuals(u.id);
         const ut=targets.find(t=>t.type==='persoon'&&t.user_id===u.id&&t.periode===m);
         const up=ut?pct(ua,ut.omzet_target):null;
         const isMe=u.id===me.id;
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:0.5px solid var(--border)">
+        return `<div style="display:flex;justify-content:space-between;padding:7px 0;border-top:0.5px solid var(--border)">
           <div style="font-size:13px;font-weight:${isMe?'600':'400'}">${isMe?'Jij':(u.naam||u.email)}</div>
-          <div style="text-align:right"><div style="font-size:13px;font-weight:600">${eur(ua)}</div>${up!==null?`<div style="font-size:11px;color:${up>=maandPct?'var(--green)':'var(--red)'}">${up}% van target</div>`:''}</div>
+          <div style="text-align:right"><div style="font-size:13px;font-weight:600">${eur(ua)}</div>${up!==null?`<div style="font-size:11px;color:${up>=maandPct?'var(--green)':'var(--red)'}">${up}%</div>`:''}</div>
         </div>`;
       }).join('')}
     </div>`;
@@ -429,149 +433,177 @@ function renderMedewerker(){
   h+=`<div class="section-label">Dagelijkse check-in${todayDag?' ✓':''}</div>
   <div style="background:#0B1F3A;border-radius:var(--r);padding:16px;margin-bottom:1rem">
     ${ystDag?`<div style="background:rgba(255,255,255,.07);border-radius:var(--rs);padding:10px 12px;margin-bottom:12px">
-      <div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Gisteren ingevuld</div>
-      <div style="font-size:13px;color:rgba(255,255,255,.7)">Productie: <strong style="color:#fff">${eur(ystDag.productie_vandaag)}</strong> · Commit morgen: <strong style="color:#4FD1A5">${eur(ystDag.commit_morgen)}</strong></div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:3px">Gisteren</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.8)">Productie: <strong style="color:#fff">${eur(ystDag.productie_vandaag)}</strong> · Commit morgen was: <strong style="color:#4FD1A5">${eur(ystDag.commit_morgen)}</strong></div>
     </div>`:''}
-    <div style="margin-bottom:10px">
-      <label style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px">Productie intake vandaag (€)</label>
+    <div class="field" style="margin-bottom:10px">
+      <label style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px">Productie intake vandaag (€)</label>
       <input type="number" id="ci-pv" value="${todayDag?todayDag.productie_vandaag:''}" placeholder="0" min="0" step="100" style="background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.2);color:#fff;border-radius:var(--rs);padding:10px 12px;font-size:15px;width:100%;box-sizing:border-box"/>
     </div>
-    <div style="margin-bottom:12px">
-      <label style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px">Commit voor morgen (€)</label>
+    <div class="field" style="margin-bottom:10px">
+      <label style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px">Commit voor morgen (€)</label>
       <input type="number" id="ci-cm" value="${todayDag?todayDag.commit_morgen:''}" placeholder="0" min="0" step="100" style="background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.2);color:#fff;border-radius:var(--rs);padding:10px 12px;font-size:15px;width:100%;box-sizing:border-box"/>
     </div>
-    <div style="margin-bottom:12px">
-      <label style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px">Notitie (optioneel)</label>
-      <textarea id="ci-n" placeholder="Bijzonderheden..." style="background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.2);color:#fff;border-radius:var(--rs);padding:10px 12px;font-size:14px;width:100%;box-sizing:border-box;min-height:60px;resize:none;font-family:inherit">${todayDag?todayDag.notitie||'':''}</textarea>
+    <div class="field" style="margin-bottom:12px">
+      <label style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px">${notitieVerplicht?'⚠️ Hoe ga jij je shit fixen vandaag? (verplicht)':'Hoe ga jij je shit fixen vandaag?'}</label>
+      <textarea id="ci-n" placeholder="${notitieVerplicht?'Verplicht als je meer dan 15% achterloopt...':'Optioneel...'}" style="background:rgba(255,255,255,.1);border:0.5px solid ${notitieVerplicht?'#EF9F27':'rgba(255,255,255,.2)'};color:#fff;border-radius:var(--rs);padding:10px 12px;font-size:14px;width:100%;box-sizing:border-box;min-height:70px;resize:none;font-family:inherit">${todayDag&&todayDag.notitie?todayDag.notitie:''}</textarea>
     </div>
-    <button onclick="saveCheckin()" style="background:#4FD1A5;color:#0B1F3A;border:none;border-radius:var(--rs);padding:12px;font-size:14px;font-weight:700;width:100%;cursor:pointer">${todayDag?'Bijwerken':'Opslaan'}</button>
+    <button onclick="saveCheckin(${notitieVerplicht})" style="background:#4FD1A5;color:#0B1F3A;border:none;border-radius:var(--rs);padding:12px;font-size:14px;font-weight:700;width:100%;cursor:pointer">${todayDag?'Bijwerken':'Opslaan'}</button>
   </div>`;
 
   document.getElementById('content').innerHTML=h;
 }
 
-async function saveCheckin(){
+async function saveCheckin(notitieVerplicht){
   const pv=parseFloat(document.getElementById('ci-pv').value)||0;
   const cm=parseFloat(document.getElementById('ci-cm').value)||0;
   const n=document.getElementById('ci-n').value.trim();
+  if(notitieVerplicht&&!n){toast('Vul in hoe je je shit gaat fixen. Dat is verplicht als je achterloopt.','err');return;}
   const today=nowD();
   const existing=dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
   try{
     const body={productie_vandaag:pv,commit_morgen:cm,notitie:n||null,user_id:me.id,datum:today};
     if(existing) await api('PATCH','/rest/v1/dagrapporten?id=eq.'+existing.id,body);
     else await api('POST','/rest/v1/dagrapporten',body);
-    await loadData();
-    if(isAdmin(me)) renderAdmin(); else renderMedewerker();
-    toast('Check-in opgeslagen!','ok');
+    await loadData();renderMedewerker();toast('Check-in opgeslagen!','ok');
   }catch(e){toast('Fout: '+e.message,'err');}
 }
 
-function getYesterday(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
-
 // ── ADMIN VIEW ────────────────────────────────────────────
 function renderAdmin(){
-  const m=nowM(); const today=nowD();
-  const [y,mo]=m.split('-').map(Number);
-  const dagVanMaand=new Date().getDate();
-  const werkdagenTotaal=getWerkdagen(y,mo);
-  const werkdagenTot=getWerkdagenTotVandaag(y,mo,dagVanMaand);
-  const maandPct=Math.round((werkdagenTot/werkdagenTotaal)*100);
+  const m=nowM();const today=nowD();
+  const[y,mo]=m.split('-').map(Number);
+  const dagVM=new Date().getDate();
+  const wTot=getWerkdagen(y,mo);
+  const wTotNu=getWerkdagenTot(y,mo,dagVM);
+  const maandPct=Math.round((wTotNu/wTot)*100);
+  // Filter medewerkers based on role
+  const mijnRegioIds=isSuperAdmin(me)?regios.map(r=>r.id):adminRegios.map(r=>r.regio_id);
+  const medewerkers=profielen.filter(u=>u.rol==='gebruiker'&&u.regio_id&&mijnRegioIds.includes(u.regio_id));
 
-  document.getElementById('tbr').innerHTML=`<button class="teal sm" onclick="location.href='dagrapporten.html'">📋 Dagrapporten</button>`;
+  document.getElementById('tbr').innerHTML=`<button class="teal sm" onclick="location.href='meer.html'">⚙️ Beheer</button>`;
 
-  // Total actuals all users
-  const allUsers=[me,...profielen.filter(u=>u.id!==me.id)];
-  const totalActuals=allUsers.reduce((s,u)=>s+calcActuals(u.id),0);
+  const totalActuals=medewerkers.reduce((s,u)=>s+calcActuals(u.id),0);
 
   let h=`<div class="stats-row">
-    <div class="stat"><div class="sv cn">${eur(totalActuals)}</div><div class="sl">Totaal actuals</div><div class="ss">Alle medewerkers · ${m}</div></div>
-    <div class="stat"><div class="sv ca">${maandPct}%</div><div class="sl">Maandvoortgang</div><div class="ss">Dag ${werkdagenTot} van ${werkdagenTotaal}</div></div>
-    <div class="stat"><div class="sv cr">${dagrapporten.filter(d=>d.datum===today).length}</div><div class="sl">Dagrapporten vandaag</div><div class="ss">van ${profielen.filter(u=>u.rol!=='admin').length+1} medewerkers</div></div>
-    <div class="stat"><div class="sv cb">${regios.length}</div><div class="sl">Regio's actief</div></div>
+    <div class="stat"><div class="sv cn">${eur(totalActuals)}</div><div class="sl">Totaal actuals</div><div class="ss">${m}</div></div>
+    <div class="stat"><div class="sv ca">${maandPct}%</div><div class="sl">Maandvoortgang</div><div class="ss">Dag ${wTotNu}/${wTot}</div></div>
+    <div class="stat"><div class="sv cr">${medewerkers.filter(u=>!dagrapporten.find(d=>d.user_id===u.id&&d.datum===today)).length}</div><div class="sl">Dag ontbreekt</div></div>
+    <div class="stat"><div class="sv cb">${mijnRegioIds.length}</div><div class="sl">Regio's</div></div>
   </div>`;
 
   // Regio overzicht
-  h+=`<div class="section-label">Regio overzicht — ${m}</div><div class="card" style="margin-bottom:1rem">`;
-  regios.forEach(r=>{
-    const rUsers=profielen.filter(u=>u.regio_id===r.id);
-    const rActuals=rUsers.reduce((s,u)=>s+calcActuals(u.id),0);
-    const rTarget=targets.find(t=>t.type==='regio'&&t.regio_id===r.id&&t.periode===m);
-    const rPct=rTarget?pct(rActuals,rTarget.omzet_target):null;
-    const onT=rPct!==null?rPct>=maandPct:null;
-    h+=`<div class="card-row"><div><div class="row-main">${r.naam} ${onT!==null?onT?'🟢':'🔴':''}</div>
-      <div class="row-sub">${eur(rActuals)} actuals${rTarget?' · target: '+eur(rTarget.omzet_target):' · geen target'}</div></div>
-      <div class="row-right"><span style="font-size:15px;font-weight:700;color:${rPct===null?'var(--muted)':rPct>=maandPct?'var(--green)':'var(--red)'}">${rPct!==null?rPct+'%':'—'}</span></div>
-    </div>`;
-  });
-  h+=`</div>`;
+  const mijnRegios=regios.filter(r=>mijnRegioIds.includes(r.id));
+  if(mijnRegios.length>1){
+    h+=`<div class="section-label">Regio overzicht — ${m}</div><div class="card" style="margin-bottom:1rem">`;
+    mijnRegios.forEach(r=>{
+      const rM=medewerkers.filter(u=>u.regio_id===r.id);
+      const rA=rM.reduce((s,u)=>s+calcActuals(u.id),0);
+      const rT=targets.find(t=>t.type==='regio'&&t.regio_id===r.id&&t.periode===m);
+      const rP=rT?pct(rA,rT.omzet_target):null;
+      h+=`<div class="card-row"><div><div class="row-main">${r.naam} ${rP!==null?rP>=maandPct?'🟢':'🔴':''}</div>
+        <div class="row-sub">${eur(rA)}${rT?' · target: '+eur(rT.omzet_target):''}</div></div>
+        <div class="row-right"><span style="font-size:15px;font-weight:700;color:${rP===null?'var(--muted)':rP>=maandPct?'var(--green)':'var(--red)'}">${rP!==null?rP+'%':'—'}</span></div>
+      </div>`;
+    });
+    h+=`</div>`;
+  }
 
-  // Per medewerker
-  h+=`<div class="section-label">Medewerkers — ${m}</div>`;
-  const allMedewerkers=[{...me,naam:(me.naam||me.email)+' (jij)'},...profielen.filter(u=>u.id!==me.id)];
-  allMedewerkers.forEach(u=>{
+  // Per medewerker accordion
+  h+=`<div class="section-label">Medewerkers</div>`;
+  medewerkers.forEach(u=>{
     const actuals=calcActuals(u.id);
     const uTarget=targets.find(t=>t.type==='persoon'&&t.user_id===u.id&&t.periode===m);
     const uPct=uTarget?pct(actuals,uTarget.omzet_target):null;
     const onT=uPct!==null?uPct>=maandPct:null;
     const reg=regios.find(r=>r.id===u.regio_id);
     const dagRap=dagrapporten.find(d=>d.user_id===u.id&&d.datum===today);
-    const streak=calcStreak(u.id);
-    const [yy,mm]=m.split('-').map(Number);
-    const wTot=getWerkdagen(yy,mm);
-    const wTot2=getWerkdagenTotVandaag(yy,mm,dagVanMaand);
+    const wRest=getRestWerkdagen(y,mo,dagVM);
     const perDag=uTarget?Math.round(uTarget.omzet_target/wTot):0;
-    const verwacht=perDag*wTot2;
+    const verwacht=perDag*wTotNu;
     const achter=verwacht-actuals;
-    const wRest=getRestWerkdagen(yy,mm,dagVanMaand);
     const nuNodig=wRest>0&&uTarget?Math.round((uTarget.omzet_target-actuals)/wRest):0;
+    const streak=calcStreak(u.id);
+    const isOpen=openMedewerker===u.id;
+
+    // User's commits this month
+    const uCommits=commits.filter(c=>c.user_id===u.id).sort((a,b)=>b.datum.localeCompare(a.datum));
 
     h+=`<div class="card" style="margin-bottom:.75rem">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div class="card-row click${isOpen?' act':''}" onclick="openMedewerker=openMedewerker===&quot;${u.id}&quot;?null:&quot;${u.id}&quot;;renderAdmin()">
         <div>
-          <div style="font-size:15px;font-weight:600">${u.naam||u.email} ${onT!==null?onT?'🟢':'🔴':''}</div>
-          <div style="font-size:12px;color:var(--muted)">${reg?reg.naam:'Geen regio'}${streak>0?' · 🔥 '+streak+' streak':''}</div>
+          <div class="row-main">${u.naam||u.email} ${onT!==null?onT?'🟢':'🔴':''}</div>
+          <div class="row-sub">${reg?reg.naam:'Geen regio'}${streak>0?' · 🔥 '+streak:''} · ${eur(actuals)}${uTarget?' / '+eur(uTarget.omzet_target):''}</div>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+        <div class="row-right">
+          ${isSuperAdmin(me)?`<button class="sm amber" onclick="event.stopPropagation();openCorrectie('${u.id}','${esc(u.naam||u.email)}',${actuals})">✏️</button>`:''}
+          <span class="chev${isOpen?' open':''}">▼</span>
+        </div>
+      </div>
+      <div class="dp${isOpen?' open':''}"><div class="di">
+        <!-- Stats row -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+          <div style="background:var(--bg);border-radius:var(--rs);padding:8px;text-align:center">
+            <div style="font-size:13px;font-weight:600">${eur(actuals)}</div><div style="font-size:10px;color:var(--muted)">Actuals</div>
+          </div>
+          <div style="background:var(--bg);border-radius:var(--rs);padding:8px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:${achter>0?'var(--red)':'var(--green)'}">${achter>0?'-':'+'}${eur(Math.abs(achter))}</div><div style="font-size:10px;color:var(--muted)">${achter>0?'Achter':'Voor'}</div>
+          </div>
+          <div style="background:var(--bg);border-radius:var(--rs);padding:8px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:${nuNodig>perDag?'var(--red)':'var(--green)'}">${eur(nuNodig)}</div><div style="font-size:10px;color:var(--muted)">Nu/dag</div>
+          </div>
+        </div>
+        <!-- Admin buttons -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
           <button class="sm teal" onclick="openAdminCommit('${u.id}','${esc(u.naam||u.email)}')">🎯 Commit</button>
-          <button class="sm" onclick="openTargetEdit('${u.id}','${esc(u.naam||u.email)}',${uTarget?uTarget.omzet_target:0},'${uTarget?uTarget.id:''}')">🏆 Target</button>
-          <button class="sm amber" onclick="openCorrectie('${u.id}','${esc(u.naam||u.email)}',${actuals})">✏️ Correctie</button>
+          ${isSuperAdmin(me)?`<button class="sm" onclick="openTargetEdit('${u.id}','${esc(u.naam||u.email)}',${uTarget?uTarget.omzet_target:0},'${uTarget?uTarget.id:''}')">🏆 Target</button>`:''}
         </div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">
-        <div style="background:var(--bg);border-radius:var(--rs);padding:8px 10px;text-align:center">
-          <div style="font-size:14px;font-weight:600">${eur(actuals)}</div>
-          <div style="font-size:10px;color:var(--muted)">Actuals</div>
-        </div>
-        <div style="background:var(--bg);border-radius:var(--rs);padding:8px 10px;text-align:center">
-          <div style="font-size:14px;font-weight:600;color:${achter>0?'var(--red)':'var(--green)'}">${achter>0?'-':'+'}${eur(Math.abs(achter))}</div>
-          <div style="font-size:10px;color:var(--muted)">${achter>0?'Achter':'Voor'}</div>
-        </div>
-        <div style="background:var(--bg);border-radius:var(--rs);padding:8px 10px;text-align:center">
-          <div style="font-size:14px;font-weight:600;color:${nuNodig>perDag?'var(--red)':'var(--green)'}">${eur(nuNodig)}</div>
-          <div style="font-size:10px;color:var(--muted)">Nu/dag nodig</div>
-        </div>
-      </div>
-      ${uTarget?`<div style="margin-bottom:6px">
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px">
-          <span>${uPct}% bereikt</span><span>Target: ${eur(uTarget.omzet_target)}</span>
-        </div>
-        <div style="height:6px;background:var(--border);border-radius:99px;overflow:hidden">
-          <div style="width:${Math.min(uPct,100)}%;height:100%;background:${uPct>=maandPct?'var(--green)':'var(--red)'};border-radius:99px"></div>
-        </div>
-      </div>`:''}
-      <div style="font-size:12px;color:var(--muted)">
-        Dagrapport: <span style="color:${dagRap?'var(--green)':'var(--red)'}">
-        ${dagRap?'✓ Ingevuld — productie: '+eur(dagRap.productie_vandaag):'✗ Ontbreekt'}</span>
-      </div>
+        <!-- Dagrapport notitie -->
+        ${dagRap?`<div style="background:#f8f9fb;border-radius:var(--rs);padding:10px 12px;margin-bottom:12px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Check-in vandaag</div>
+          <div style="font-size:13px">Productie: <strong>${eur(dagRap.productie_vandaag)}</strong> · Morgen: <strong style="color:var(--teal,#4FD1A5)">${eur(dagRap.commit_morgen)}</strong></div>
+          ${dagRap.notitie?`<div style="margin-top:6px;font-size:13px;color:var(--muted)">💬 <em>${dagRap.notitie}</em></div>`:''}
+        </div>`:`<div style="background:#fef2f2;border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;font-size:13px;color:#991b1b">✗ Geen check-in vandaag</div>`}
+        <!-- Commits list -->
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Commits deze maand</div>
+        ${uCommits.length?uCommits.map(c=>`
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500">${fdt(c.datum)} — ${eur(c.omzet_forecast)}</div>
+              ${c.bevestigd?`<div style="font-size:11px;color:${c.gehaald?'var(--green)':'var(--red)'}">${c.gehaald?'✓ Gehaald':'✗ Gemist'} — ${eur(c.omzet_actuals)}</div>`:'<div style="font-size:11px;color:var(--muted)">Open</div>'}
+            </div>
+            ${isSuperAdmin(me)||isRegioAdmin(me)?`<button class="sm" onclick="openEditCommit(${c.id},'${esc(u.naam||u.email)}',${c.omzet_forecast},'${c.datum}')">✏️</button>`:''}
+          </div>`).join(''):'<div style="font-size:13px;color:var(--muted)">Geen commits.</div>'}
+      </div></div>
     </div>`;
   });
 
   document.getElementById('content').innerHTML=h;
 }
 
-// ── ADMIN ACTIONS ─────────────────────────────────────────
-function openAdminCommit(uid, naam){
-  adminCommitUserId=uid; adminCommitUserNaam=naam;
+// ── MODALS & ACTIONS ──────────────────────────────────────
+let editCommitId=null;
+function openEditCommit(id,naam,bedrag,datum){
+  editCommitId=id;
+  document.getElementById('ec-naam').textContent=naam;
+  document.getElementById('ec-o').value=bedrag;
+  document.getElementById('ec-d').value=datum;
+  document.getElementById('ov-ec').classList.add('open');
+}
+async function saveEditCommit(){
+  const o=parseFloat(document.getElementById('ec-o').value);
+  const d=document.getElementById('ec-d').value;
+  if(isNaN(o)){toast('Vul een bedrag in.');return;}
+  const btn=document.getElementById('btn-ec-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
+  try{
+    await api('PATCH','/rest/v1/commitments?id=eq.'+editCommitId,{omzet_forecast:o,datum:d});
+    document.getElementById('ov-ec').classList.remove('open');
+    await loadData();renderAdmin();toast('Commit bijgewerkt.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+}
+
+function openAdminCommit(uid,naam){
+  adminCommitUID=uid;adminCommitNaam=naam;
   const tom=new Date();tom.setDate(tom.getDate()+1);
   document.getElementById('ac-naam').textContent=naam;
   document.getElementById('ac-d').value=tom.toISOString().slice(0,10);
@@ -584,15 +616,15 @@ async function saveAdminCommit(){
   if(!d||isNaN(o)){toast('Vul datum en omzet in.');return;}
   const btn=document.getElementById('btn-ac-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
   try{
-    const u=profielen.find(x=>x.id===adminCommitUserId)||me;
-    await api('POST','/rest/v1/commitments',{user_id:adminCommitUserId,regio_id:u.regio_id||null,datum:d,omzet_forecast:o});
+    const u=profielen.find(x=>x.id===adminCommitUID)||me;
+    await api('POST','/rest/v1/commitments',{user_id:adminCommitUID,regio_id:u.regio_id||null,datum:d,omzet_forecast:o});
     document.getElementById('ov-ac').classList.remove('open');
-    await loadData();renderAdmin();toast('Commitment aangemaakt.','ok');
+    await loadData();renderAdmin();toast('Commit aangemaakt.','ok');
   }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
 }
 
-function openTargetEdit(uid, naam, huidig, targetId){
-  targetEditUserId=uid;
+function openTargetEdit(uid,naam,huidig,targetId){
+  targetEditUID=uid;
   document.getElementById('te-naam').textContent=naam;
   document.getElementById('te-o').value=huidig||'';
   document.getElementById('te-p').value=nowM();
@@ -606,41 +638,33 @@ async function saveTargetEdit(){
   if(isNaN(o)||!p){toast('Vul target en periode in.');return;}
   const btn=document.getElementById('btn-te-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
   try{
-    if(existId){
-      await api('PATCH','/rest/v1/targets?id=eq.'+existId,{omzet_target:o,periode:p});
-      const t=targets.find(x=>x.id===parseInt(existId));if(t){t.omzet_target=o;t.periode=p;}
-    } else {
-      const res=await api('POST','/rest/v1/targets',{type:'persoon',user_id:targetEditUserId,periode:p,omzet_target:o});
-      if(res&&res[0])targets.push(res[0]);
-    }
+    if(existId){await api('PATCH','/rest/v1/targets?id=eq.'+existId,{omzet_target:o,periode:p});const t=targets.find(x=>x.id===parseInt(existId));if(t){t.omzet_target=o;t.periode=p;}}
+    else{const res=await api('POST','/rest/v1/targets',{type:'persoon',user_id:targetEditUID,periode:p,omzet_target:o});if(res&&res[0])targets.push(res[0]);}
     document.getElementById('ov-te').classList.remove('open');
     await loadData();renderAdmin();toast('Target opgeslagen.','ok');
   }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
 }
 
-function openCorrectie(uid, naam, huidig){
-  corrUserId=uid; corrUserNaam=naam;
+function openCorrectie(uid,naam,huidig){
+  corrUID=uid;corrNaam=naam;
   document.getElementById('cr-naam').textContent=naam;
   document.getElementById('cr-huidig').textContent=eur(huidig);
-  document.getElementById('cr-b').value='';
-  document.getElementById('cr-r').value='';
+  document.getElementById('cr-b').value='';document.getElementById('cr-r').value='';
   document.getElementById('ov-cr').classList.add('open');
 }
 async function saveCorrectie(){
   const b=parseFloat(document.getElementById('cr-b').value);
   const r=document.getElementById('cr-r').value.trim();
-  if(isNaN(b)){toast('Vul een bedrag in (positief of negatief).');return;}
-  if(!r){toast('Vul een reden in.');return;}
+  if(isNaN(b)){toast('Vul een bedrag in.');return;}
+  if(!r){toast('Reden is verplicht.');return;}
   const btn=document.getElementById('btn-cr-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
   try{
-    await api('POST','/rest/v1/correcties',{user_id:corrUserId,admin_id:me.id,bedrag:b,reden:r,datum:nowD()});
+    await api('POST','/rest/v1/correcties',{user_id:corrUID,admin_id:me.id,bedrag:b,reden:r,datum:nowD()});
     document.getElementById('ov-cr').classList.remove('open');
     await loadData();renderAdmin();toast('Correctie opgeslagen.','ok');
   }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
 }
 
-// Bevestig
-let bevCommitId=null;
 function openBevModal(id){
   bevCommitId=id;
   const c=commits.find(x=>x.id===id);
@@ -652,8 +676,7 @@ async function quickBev(id){
   const c=commits.find(x=>x.id===id);if(!c)return;
   try{
     await api('PATCH','/rest/v1/commitments?id=eq.'+id,{bevestigd:true,omzet_actuals:c.omzet_forecast,gehaald:true});
-    await loadData();if(isAdmin(me))renderAdmin();else renderMedewerker();
-    toast('Top! 🎉','ok');
+    await loadData();renderMedewerker();toast('Top! 🎉','ok');
   }catch(e){toast('Fout: '+e.message,'err');}
 }
 async function saveBev(){
@@ -664,8 +687,7 @@ async function saveBev(){
   try{
     await api('PATCH','/rest/v1/commitments?id=eq.'+bevCommitId,{bevestigd:true,omzet_actuals:o,gehaald:o>=(c?.omzet_forecast||0)});
     document.getElementById('ov-bev').classList.remove('open');
-    await loadData();if(isAdmin(me))renderAdmin();else renderMedewerker();
-    toast(o>=(c?.omzet_forecast||0)?'Target gehaald! 🎉':'Bevestigd.','ok');
+    await loadData();renderMedewerker();toast(o>=(c?.omzet_forecast||0)?'Target gehaald! 🎉':'Bevestigd.','ok');
   }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Bevestigen';}
 }
 

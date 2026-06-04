@@ -750,19 +750,37 @@ async function registerServiceWorker() {
 async function requestPushPermission() {
   const reg = await registerServiceWorker();
   if (!reg) { toast('Push notificaties worden niet ondersteund op dit apparaat.', 'err'); return; }
-  
+
+  // HTTPS check
+  if (location.protocol !== 'https:') {
+    toast('Push werkt alleen via HTTPS. Schakel HTTPS in via GitHub Pages instellingen.', 'err');
+    console.error('Push geblokkeerd: geen HTTPS');
+    return;
+  }
+
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') { toast('Notificaties geweigerd. Pas dit aan in je browserinstellingen.'); return; }
-  
+
   try {
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
-    
+
     const subData = sub.toJSON();
     const s = getSession();
-    await fetch('https://bstpobqvodljhpjzgnkp.supabase.co/rest/v1/push_subscriptions', {
+
+    // Sessie check
+    if (!s || !s.access_token) {
+      toast('Sessie verlopen. Log opnieuw in.', 'err');
+      console.error('Push geblokkeerd: geen geldige sessie', s);
+      return;
+    }
+
+    console.log('Push subscription aanmaken voor user:', me?.id);
+    console.log('Endpoint:', subData.endpoint);
+
+    const resp = await fetch('https://bstpobqvodljhpjzgnkp.supabase.co/rest/v1/push_subscriptions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -777,12 +795,23 @@ async function requestPushPermission() {
         auth: subData.keys?.auth
       })
     });
-    
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error('Supabase fout bij opslaan subscription:', resp.status, errText);
+      toast('Opslaan mislukt (' + resp.status + '): ' + errText, 'err');
+      return;
+    }
+
+    console.log('Subscription opgeslagen ✅');
     toast('Meldingen ingeschakeld! ✅', 'ok');
     document.getElementById('push-btn')?.remove();
     document.getElementById('push-status')?.remove();
     checkPushStatus();
-  } catch(e) { toast('Kon niet inschrijven: ' + e.message, 'err'); }
+  } catch(e) {
+    console.error('Push fout:', e);
+    toast('Kon niet inschrijven: ' + e.message, 'err');
+  }
 }
 
 async function checkPushStatus() {

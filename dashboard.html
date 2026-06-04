@@ -425,6 +425,15 @@ function renderMedewerker(){
       <div><div style="font-size:14px;font-weight:600;color:#fff">${streak} dag${streak!==1?'en':''} op rij gehaald</div><div style="font-size:12px;color:rgba(255,255,255,.5)">Ga zo door!</div></div>
     </div>`;
   }
+  // Push notification opt-in
+  if('Notification' in window && Notification.permission === 'default'){
+    h+=`<div id="push-status" style="background:#fffbeb;border:0.5px solid #fde68a;border-radius:var(--r);padding:12px 16px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div><div style="font-size:13px;font-weight:600;color:#92400e">🔔 Schakel meldingen in</div><div style="font-size:12px;color:#b45309;margin-top:2px">Ontvang dagelijkse motivatie en reminders</div></div>
+      <button id="push-btn" class="sm amber" onclick="requestPushPermission()" style="flex-shrink:0">Inschakelen</button>
+    </div>`;
+  } else if('Notification' in window && Notification.permission === 'granted'){
+    h+=`<div style="background:#f0fdf4;border:0.5px solid #bbf7d0;border-radius:var(--r);padding:10px 16px;margin-bottom:1rem;font-size:12px;color:#166534">✅ Meldingen ingeschakeld</div>`;
+  }
 
   // ── REGIO WIDGET ──
   if(myReg){
@@ -504,7 +513,7 @@ function renderAdmin(){
   const mijnRegioIds=isSuperAdmin(me)?regios.map(r=>r.id):adminRegios.map(r=>r.regio_id);
   const medewerkers=profielen.filter(u=>u.rol==='gebruiker'&&u.regio_id&&mijnRegioIds.includes(u.regio_id));
 
-  document.getElementById('tbr').innerHTML=`<button class="teal sm" onclick="location.href='meer.html'">⚙️ Beheer</button>`;
+  document.getElementById('tbr').innerHTML=`<button class="teal sm" onclick="location.href='meer.html'">⚙️ Beheer</button><button class="sm" onclick="openNotifModal('all',null,'Heel team')">🔔 Stuur melding</button>`;
 
   const totalActuals=medewerkers.reduce((s,u)=>s+calcActuals(u.id),0);
 
@@ -580,6 +589,7 @@ function renderAdmin(){
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
           <button class="sm teal" onclick="openAdminCommit('${u.id}','${esc(u.naam||u.email)}')">🎯 Commit</button>
           ${isSuperAdmin(me)?`<button class="sm" onclick="openTargetEdit('${u.id}','${esc(u.naam||u.email)}',${uTarget?uTarget.omzet_target:0},'${uTarget?uTarget.id:''}')">🏆 Target</button>`:''}
+          <button class="sm" onclick="openNotifModal('user','${u.id}','${esc(u.naam||u.email)}')">🔔 Melding</button>
         </div>
         <!-- Dagrapport notitie -->
         ${dagRap?`<div style="background:#f8f9fb;border-radius:var(--rs);padding:10px 12px;margin-bottom:12px">
@@ -714,8 +724,137 @@ async function saveBev(){
   }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Bevestigen';}
 }
 
+// ── PUSH NOTIFICATIONS ──────────────────────────────────────
+const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa40HI4bCnNAaLMwdYWy0KaFTMxMKJAc4Gd4kPHAMjr-YJKkiRvGNBzFhK4vQ';
+const SB_FUNCTIONS_URL = 'https://bstpobqvodljhpjzgnkp.supabase.co/functions/v1';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    console.log('SW registered:', reg.scope);
+    return reg;
+  } catch(e) { console.error('SW registration failed:', e); return false; }
+}
+
+async function requestPushPermission() {
+  const reg = await registerServiceWorker();
+  if (!reg) { toast('Push notificaties worden niet ondersteund op dit apparaat.', 'err'); return; }
+  
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') { toast('Notificaties geweigerd. Pas dit aan in je browserinstellingen.'); return; }
+  
+  try {
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    
+    const subData = sub.toJSON();
+    const s = getSession();
+    await fetch('https://bstpobqvodljhpjzgnkp.supabase.co/rest/v1/push_subscriptions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SB_ANON,
+        'Authorization': 'Bearer ' + s.access_token,
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        user_id: me.id,
+        endpoint: subData.endpoint,
+        p256dh: subData.keys?.p256dh,
+        auth: subData.keys?.auth
+      })
+    });
+    
+    toast('Meldingen ingeschakeld! ✅', 'ok');
+    document.getElementById('push-btn')?.remove();
+    document.getElementById('push-status')?.remove();
+    checkPushStatus();
+  } catch(e) { toast('Kon niet inschrijven: ' + e.message, 'err'); }
+}
+
+async function checkPushStatus() {
+  if (!('serviceWorker' in navigator)) return;
+  const reg = await navigator.serviceWorker.getRegistration('/sw.js');
+  if (!reg) return;
+  const sub = await reg.pushManager.getSubscription();
+  return !!sub;
+}
+
+async function sendAdminNotification(targetType, targetId, title, message) {
+  const s = getSession();
+  const resp = await fetch(SB_FUNCTIONS_URL + '/send-notification', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + s.access_token
+    },
+    body: JSON.stringify({
+      type: 'admin_message',
+      userId: targetType === 'all' ? 'all' : targetType === 'regio' ? 'regio:' + targetId : targetId,
+      data: { title, message }
+    })
+  });
+  const data = await resp.json();
+  return data.sent || 0;
+}
+
+// Initialize SW on page load
+registerServiceWorker();
+
+let notifTarget = 'all';
+let notifTargetId = null;
+
+function openNotifModal(type, id, naam) {
+  notifTarget = type;
+  notifTargetId = id || null;
+  document.getElementById('nm-target').textContent = 
+    type === 'all' ? 'Heel team' : 
+    type === 'regio' ? 'Regio: ' + naam : 
+    naam;
+  document.getElementById('nm-title').value = '';
+  document.getElementById('nm-msg').value = '';
+  document.getElementById('ov-notif').classList.add('open');
+}
+
+async function saveNotif() {
+  const title = document.getElementById('nm-title').value.trim();
+  const msg = document.getElementById('nm-msg').value.trim();
+  if (!title || !msg) { toast('Vul titel en bericht in.'); return; }
+  const btn = document.getElementById('btn-nm-s');
+  btn.disabled = true; btn.innerHTML = '<span class="ld"></span>';
+  try {
+    const sent = await sendAdminNotification(notifTarget, notifTargetId, title, msg);
+    document.getElementById('ov-notif').classList.remove('open');
+    toast(sent > 0 ? `Melding verstuurd naar ${sent} persoon${sent !== 1 ? 'en' : ''}! 🔔` : 'Verstuurd (geen actieve subscriptions)', 'ok');
+  } catch(e) { toast('Fout: ' + e.message, 'err'); }
+  finally { btn.disabled = false; btn.innerHTML = 'Versturen'; }
+}
+
 init();
 
 </script>
+
+<!-- Melding sturen modal -->
+<div class="overlay" id="ov-notif" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal"><div class="modal-handle"></div>
+<div class="mt">🔔 Melding sturen</div>
+<div class="ms">Aan: <strong id="nm-target"></strong></div>
+<div class="field"><label>Titel *</label><input type="text" id="nm-title" placeholder="bijv. Actie vereist!" maxlength="50"/></div>
+<div class="field"><label>Bericht *</label><textarea id="nm-msg" placeholder="Je bericht..." style="min-height:80px" maxlength="200"></textarea></div>
+<div class="mf"><button onclick="document.getElementById('ov-notif').classList.remove('open')">Annuleren</button><button class="teal" id="btn-nm-s" onclick="saveNotif()">Versturen 🚀</button></div>
+</div></div>
 </body>
 </html>

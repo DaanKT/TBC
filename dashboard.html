@@ -137,8 +137,20 @@ function pct(a,b){return b?Math.min(100,Math.round(a/b*100)):0;}
 function nowM(){return new Date().toISOString().slice(0,7);}
 function nowD(){return new Date().toISOString().slice(0,10);}
 function toast(msg,tp=''){const el=document.createElement('div');el.className='toast'+(tp?' '+tp:'');el.textContent=msg;let tw=document.getElementById('tw');if(!tw){tw=document.createElement('div');tw.id='tw';tw.className='tw';document.body.appendChild(tw);}tw.appendChild(el);setTimeout(()=>el.remove(),3500);}
-function esc(s){return String(s).replace(/'/g,"'");}
-async function checkAuth(){const s=getSession();if(!s){location.href='login.html';return null;}const me=getMe();if(me)return me;try{const p=await api('GET','/rest/v1/profielen?id=eq.'+s.user.id);if(!p||!p.length)throw new Error('no profile');setMe(p[0]);return p[0];}catch(e){logout();return null;}}
+function esc(s){return String(s).replace(/'/g,"&apos;");}
+async function checkAuth(){
+  const s=getSession();
+  if(!s||!s.access_token){localStorage.clear();location.replace('login.html');return null;}
+  const me=getMe();
+  if(me&&me.id)return me;
+  try{
+    const p=await api('GET','/rest/v1/profielen?id=eq.'+s.user.id);
+    if(!p||!p.length)throw new Error('no profile');
+    setMe(p[0]);return p[0];
+  }catch(e){
+    localStorage.clear();location.replace('login.html');return null;
+  }
+}
 function isAdmin(me){return me&&me.rol==='admin';}
 
 

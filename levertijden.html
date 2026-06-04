@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>Dashboard — TBC</title>
+<title>Levertijden — TBC</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="manifest" href="manifest.json"/>
 <style>
@@ -109,15 +109,46 @@ textarea{resize:vertical;min-height:80px}
   <div class="topbar-logo">The Branding <span>Club</span></div>
   <div class="topbar-right"><span class="topbar-user" id="topbar-user"></span><button class="btn-lo" onclick="logout()">↩</button></div>
 </div>
-<div class="content" id="content"><div class="empty"><span class="ld dk"></span><br><br>Laden...</div></div>
+<div class="content" id="content"><div class="empty"><span class="ld dk"></span></div></div>
 <nav class="bottom-nav">
-  <button class="bn-item active" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
-  <button class="bn-item " onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span></button>
-  <button class="bn-item " onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
-  <button class="bn-item " onclick="location.href='levertijden.html'"><span class="ic">📦</span><span>Lever</span></button>
-  <button class="bn-item " onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
+  <button class="bn-item" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
+  <button class="bn-item" onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span></button>
+  <button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
+  <button class="bn-item active"><span class="ic">📦</span><span>Lever</span></button>
+  <button class="bn-item" onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
 </nav>
 <div class="tw" id="tw"></div>
+
+<!-- Nieuw/bewerk verzoek -->
+<div class="overlay" id="ov-lv" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal"><div class="modal-handle"></div>
+<div class="mt">Levertijd verzoek</div>
+<div class="field"><label>Klantnaam *</label><input type="text" id="lv-kn" placeholder="bijv. De Wildse Hut"/></div>
+<div class="field"><label>Klant e-mail</label><input type="email" id="lv-ke" placeholder="optioneel — voor mailing"/></div>
+<div class="field"><label>Product/omschrijving *</label><input type="text" id="lv-pr" placeholder="bijv. Bestekzakjes 2000 stuks"/></div>
+<div class="field"><label>Status</label>
+  <select id="lv-st">
+    <option value="nieuw">🆕 Nieuw</option>
+    <option value="uitgevraagd">📤 Uitgevraagd bij purchase</option>
+    <option value="ontvangen">📥 Ontvangen van purchase</option>
+    <option value="gecommuniceerd">✅ Gecommuniceerd naar klant</option>
+  </select>
+</div>
+<div class="field"><label>Leveringsdatum (van purchase)</label><input type="date" id="lv-ld"/></div>
+<div class="field"><label>Notitie van purchase</label><textarea id="lv-pn" placeholder="bijv. Week 24, kan uitlopen naar week 25" style="min-height:60px"></textarea></div>
+<div class="mf"><button onclick="document.getElementById('ov-lv').classList.remove('open')">Annuleren</button><button class="teal" id="btn-lv-s" onclick="saveModal()">Opslaan</button></div>
+</div></div>
+
+<!-- Sluiten modal -->
+<div class="overlay" id="ov-sl" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal"><div class="modal-handle"></div>
+<div class="mt">Verzoek afsluiten</div>
+<div class="ms">Vul de datum in die purchase heeft gecommuniceerd.</div>
+<div class="field"><label>Leveringsdatum van purchase *</label><input type="date" id="sl-d"/></div>
+<div class="field"><label>Notitie van purchase</label><textarea id="sl-n" placeholder="Wat heeft purchase precies gezegd?" style="min-height:60px"></textarea></div>
+<div class="mf"><button onclick="document.getElementById('ov-sl').classList.remove('open')">Annuleren</button><button class="teal" id="btn-sl-s" onclick="saveSluiten()">Opslaan & sluiten</button></div>
+</div></div>
+
 <script>
 const SB='https://bstpobqvodljhpjzgnkp.supabase.co';
 const AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
@@ -137,7 +168,7 @@ function pct(a,b){return b?Math.min(100,Math.round(a/b*100)):0;}
 function nowM(){return new Date().toISOString().slice(0,7);}
 function nowD(){return new Date().toISOString().slice(0,10);}
 function toast(msg,tp=''){const el=document.createElement('div');el.className='toast'+(tp?' '+tp:'');el.textContent=msg;let tw=document.getElementById('tw');if(!tw){tw=document.createElement('div');tw.id='tw';tw.className='tw';document.body.appendChild(tw);}tw.appendChild(el);setTimeout(()=>el.remove(),3500);}
-function esc(s){return String(s).replace(/'/g,"&apos;");}
+function esc(s){return String(s).replace(/\/g,'\\').replace(/'/g,"\'");}
 async function checkAuth(){
   const s=getSession();
   if(!s||!s.access_token){localStorage.clear();location.replace('login.html');return null;}
@@ -154,118 +185,185 @@ async function checkAuth(){
 function isAdmin(me){return me&&me.rol==='admin';}
 
 
-let me=null, regios=[], targets=[], commits=[], dagrapporten=[], profielen=[];
+let me=null, levertijden=[], profielen=[], regios=[];
+let editId=null, sluitId=null, filterStatus='all', filterUser=null;
+
+const SM={
+  nieuw:{l:'Nieuw',c:'b-user',ic:'🆕'},
+  uitgevraagd:{l:'Uitgevraagd',c:'b-behandeling',ic:'📤'},
+  ontvangen:{l:'Ontvangen',c:'b-wacht',ic:'📥'},
+  gecommuniceerd:{l:'Gecommuniceerd',c:'b-opgelost',ic:'✅'}
+};
 
 async function init(){
   me=await checkAuth(); if(!me)return;
-  document.getElementById('topbar-user').textContent=(me.naam||me.email)+(me.rol==='admin'?' (Admin)':'');
+  document.getElementById('topbar-user').textContent=me.naam||me.email;
   await loadData();
-  renderDash();
-  checkBadges();
+  render();
 }
 
 async function loadData(){
   const isA=isAdmin(me);
-  regios=await api('GET','/rest/v1/regios?order=naam.asc')||[];
-  targets=await api('GET','/rest/v1/targets?order=periode.desc')||[];
-  const m=nowM();
-  const cu=isA?'/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email,regio_id)':'/rest/v1/commitments?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=datum.desc';
-  commits=await api('GET',cu)||[];
-  const today=nowD();
-  const du=isA?'/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc&select=*,profielen(naam,email)':'/rest/v1/dagrapporten?user_id=eq.'+me.id+'&datum=gte.'+m+'-01&order=datum.desc';
-  dagrapporten=await api('GET',du)||[];
-  if(isA) profielen=await api('GET','/rest/v1/profielen')||[];
-}
-
-function checkBadges(){
-  const today=nowD();
-  const hr=new Date().getHours();
-  const myDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
-  const bn=document.getElementById('bn-dag');
-  if(bn) bn.style.display=(!myDag&&hr>=16)?'block':'none';
-  const unc=commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<today);
-  const bt=document.getElementById('bn-taken');
-  if(bt) bt.style.display=unc.length?'block':'none';
-}
-
-function renderDash(){
-  const isA=isAdmin(me);
-  const m=nowM();
-  const today=nowD();
-  const myC=commits.filter(c=>c.user_id===me.id);
-  const myA=myC.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-  const myF=myC.reduce((s,c)=>s+(c.omzet_forecast||0),0);
-  const myT=targets.find(t=>t.type==='persoon'&&t.user_id===me.id&&t.periode===m);
-  const myReg=regios.find(r=>r.id===me.regio_id);
-  const rC=commits.filter(c=>myReg?c.profielen?.regio_id===me.regio_id:c.user_id===me.id);
-  const rA=rC.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-  const rT=myReg?targets.find(t=>t.type==='regio'&&t.regio_id===me.regio_id&&t.periode===m):null;
-  const unc=commits.filter(c=>c.user_id===me.id&&!c.bevestigd&&c.datum<today);
-  const hr=new Date().getHours();
-  const myDag=dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
-  const bev=commits.filter(c=>c.user_id===me.id&&c.bevestigd);
-  const hit=bev.length?Math.round(bev.filter(c=>c.gehaald).length/bev.length*100):0;
-
-  let h='';
-
-  // Alerts
-  if(unc.length) h+=`<div class="alert warn">⚠️ <strong>${unc.length} commitment${unc.length>1?'s':''} te bevestigen</strong> — <a href="dagrapporten.html" style="color:inherit;font-weight:600">Invullen →</a></div>`;
-  if(!myDag&&hr>=16) h+=`<div class="alert info">📋 Dagrapport van vandaag nog niet ingevuld — <a href="dagrapporten.html" style="color:inherit;font-weight:600">Invullen →</a></div>`;
-
-  // Stats 2x2
-  const mp=myT?pct(myA,myT.omzet_target):null;
-  const rp=rT?pct(rA,rT.omzet_target):null;
-  h+=`<div class="stats-row">
-    <div class="stat"><div class="sv cn">${eur(myA)}</div><div class="sl">Mijn actuals</div>${myT?`<div class="ss">${mp}% van target</div><div class="pb"><div class="pf${mp<50?' re':mp<80?' am':''}" style="width:${mp}%"></div></div>`:''}
-    </div>
-    <div class="stat"><div class="sv" style="color:var(--teal)">${eur(rA)}</div><div class="sl">${myReg?myReg.naam:'Regio'}</div>${rT?`<div class="ss">${rp}% van target</div><div class="pb"><div class="pf${rp<50?' re':rp<80?' am':''}" style="width:${rp}%"></div></div>`:''}
-    </div>
-    <div class="stat"><div class="sv ${unc.length?'ca':'cg'}">${unc.length}</div><div class="sl">Te bevestigen</div></div>
-    <div class="stat"><div class="sv ${hit>=80?'cg':hit>=50?'ca':'cr'}">${hit}%</div><div class="sl">Hit rate</div><div class="ss">${bev.length} bevestigd</div></div>
-  </div>`;
-
-  // Quick actions
-  h+=`<div class="r2" style="margin-bottom:1rem">
-    <button class="teal full" onclick="location.href='dagrapporten.html'">📋 Dagrapport</button>
-    <button class="primary full" onclick="location.href='dagrapporten.html#commit'">🎯 Commitment</button>
-  </div>`;
-
-  // Admin: regio overzicht
+  const lu=isA
+    ?'/rest/v1/levertijden?order=aangemaakt_op.desc&select=*,profielen(naam,email)'
+    :'/rest/v1/levertijden?user_id=eq.'+me.id+'&order=aangemaakt_op.desc';
+  levertijden=await api('GET',lu)||[];
   if(isA){
-    h+=`<div class="section-label">Regio overzicht — ${m}</div><div class="card">`;
-    if(!regios.length) h+=`<div class="empty">Nog geen regio's.</div>`;
-    else regios.forEach(r=>{
-      const rc=commits.filter(c=>c.profielen?.regio_id===r.id);
-      const ra=rc.filter(c=>c.bevestigd).reduce((s,c)=>s+(c.omzet_actuals||0),0);
-      const rf=rc.reduce((s,c)=>s+(c.omzet_forecast||0),0);
-      const rt=targets.find(t=>t.type==='regio'&&t.regio_id===r.id&&t.periode===m);
-      const p=rt?pct(ra,rt.omzet_target):null;
-      h+=`<div class="card-row"><div><div class="row-main">${r.naam}</div><div class="row-sub">${eur(ra)} actuals · ${eur(rf)} forecast</div></div><div class="row-right">${p!==null?`<span style="font-weight:700;font-size:14px;color:${p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)'}">${p}%</span>`:'<span style="color:var(--muted);font-size:12px">geen target</span>'}</div></div>`;
-    });
-    h+=`</div>`;
+    profielen=await api('GET','/rest/v1/profielen')||[];
+    regios=await api('GET','/rest/v1/regios?order=naam.asc')||[];
+  }
+}
 
-    // Dagrapport status vandaag
-    h+=`<div class="section-label">Dagrapport status vandaag</div><div class="card">`;
+function filtered(){
+  let l=levertijden;
+  if(filterStatus!=='all') l=l.filter(x=>x.status===filterStatus);
+  if(filterUser) l=l.filter(x=>x.user_id===filterUser);
+  return l;
+}
+
+function render(){
+  const isA=isAdmin(me);
+  const today=nowD();
+  const filt=filtered();
+  const urgent=levertijden.filter(l=>{
+    if(l.status==='gecommuniceerd') return false;
+    if(!l.leverdatum) return false;
+    const diff=(new Date(l.leverdatum)-new Date())/86400000;
+    return diff<=2&&diff>=0;
+  });
+
+  let h=`<div class="page-header"><div><div class="page-title">Levertijden</div><div class="page-sub">Purchase verzoeken bijhouden</div></div><button class="teal sm" onclick="openModal()">+ Nieuw</button></div>`;
+
+  if(urgent.length){
+    h+=`<div class="alert" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;margin-bottom:1rem">
+      ⚡ <strong>${urgent.length} verzoek${urgent.length>1?'en':''} met deadline binnen 2 dagen!</strong>
+    </div>`;
+  }
+
+  // Stats
+  const stats=[['all','Alle',levertijden.length,'cn'],['nieuw','Nieuw',levertijden.filter(x=>x.status==='nieuw').length,'cb'],['uitgevraagd','Uitgevraagd',levertijden.filter(x=>x.status==='uitgevraagd').length,'ca'],['ontvangen','Ontvangen',levertijden.filter(x=>x.status==='ontvangen').length,'cb'],['gecommuniceerd','Geclosed',levertijden.filter(x=>x.status==='gecommuniceerd').length,'cg']];
+  h+=`<div class="stats-row" style="grid-template-columns:repeat(3,1fr)">`;
+  stats.slice(0,3).forEach(([f,l,n,c])=>h+=`<div class="stat click${filterStatus===f?' act':''}" onclick="filterStatus='${f}';render()"><div class="sv ${c}">${n}</div><div class="sl">${l}</div></div>`);
+  h+=`</div><div class="stats-row" style="grid-template-columns:repeat(2,1fr);margin-top:-4px">`;
+  stats.slice(3).forEach(([f,l,n,c])=>h+=`<div class="stat click${filterStatus===f?' act':''}" onclick="filterStatus='${f}';render()"><div class="sv ${c}">${n}</div><div class="sl">${l}</div></div>`);
+  h+=`</div>`;
+
+  // Admin user filter
+  if(isA){
+    h+=`<div class="tag-row">
+      <span class="tag${!filterUser?' active':''}" onclick="filterUser=null;render()">Iedereen</span>`;
     profielen.filter(u=>u.rol!=='admin').forEach(u=>{
-      const dag=dagrapporten.find(d=>d.user_id===u.id&&d.datum===today);
-      h+=`<div class="card-row"><div><div class="row-main">${u.naam||u.email}</div><div class="row-sub">${dag?`Maand: ${eur(dag.maandstand)} · Vandaag: ${eur(dag.productie_vandaag)} · Morgen: ${eur(dag.commit_morgen)}`:'Nog niet ingevuld'}</div></div><div class="row-right"><span class="badge ${dag?'b-opgelost':'b-open'}">${dag?'✓ Ingevuld':'Ontbreekt'}</span></div></div>`;
+      h+=`<span class="tag${filterUser===u.id?' active':''}" onclick="filterUser='${u.id}';render()">${u.naam||u.email}</span>`;
     });
     h+=`</div>`;
   }
 
-  // Recente commits persoonlijk
-  const rec=commits.filter(c=>c.user_id===me.id).slice(0,3);
-  if(rec.length){
-    h+=`<div class="section-label">Recente commitments</div><div class="card">`;
-    rec.forEach(c=>{
-      const st=c.bevestigd?(c.gehaald?'gehaald':'gemist'):'open2';
-      const sl=c.bevestigd?(c.gehaald?'Gehaald ✓':'Gemist ✗'):'Open';
-      h+=`<div class="card-row"><div><div class="row-main">${fdt(c.datum)} — ${eur(c.omzet_forecast)}</div><div class="row-sub">${c.bevestigd&&c.omzet_actuals!=null?'Actuals: '+eur(c.omzet_actuals):'Nog niet bevestigd'}</div></div><div class="row-right"><span class="badge b-${st}">${sl}</span></div></div>`;
-    });
-    h+=`</div>`;
-  }
+  if(!filt.length){h+=`<div class="empty">Geen verzoeken gevonden.</div>`;document.getElementById('content').innerHTML=h;return;}
 
+  h+=`<div class="card">`;
+  filt.forEach(l=>{
+    const canEdit=l.user_id===me.id||isA;
+    const isUrgent=l.leverdatum&&l.status!=='gecommuniceerd'&&(new Date(l.leverdatum)-new Date())/86400000<=2;
+    const daysLeft=l.leverdatum?Math.ceil((new Date(l.leverdatum)-new Date())/86400000):null;
+    h+=`<div class="card-row" style="${isUrgent?'border-left:3px solid var(--red);padding-left:13px':''}">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+          <span style="font-size:14px;font-weight:600">${l.klant_naam}</span>
+          <span class="badge ${SM[l.status].c}">${SM[l.status].ic} ${SM[l.status].l}</span>
+          ${isUrgent?`<span style="font-size:11px;color:var(--red);font-weight:700">${daysLeft===0?'Vandaag!':daysLeft===1?'Morgen!':daysLeft+' dagen'}</span>`:''}
+        </div>
+        <div style="font-size:13px;color:var(--text);margin-bottom:3px">${l.product}</div>
+        <div style="font-size:12px;color:var(--muted)">
+          ${l.leverdatum?`📅 ${fdt(l.leverdatum)}`:'Geen datum'}
+          ${l.klant_email?` · ✉️ ${l.klant_email}`:''}
+          ${isA&&l.profielen?` · 👤 ${l.profielen.naam||l.profielen.email}`:''}
+        </div>
+        ${l.purchase_notitie?`<div style="font-size:12px;color:var(--muted);margin-top:4px;background:#f8f9fb;padding:6px 8px;border-radius:var(--rs)">💬 ${l.purchase_notitie}</div>`:''}
+      </div>
+      <div class="row-right" style="flex-direction:column;gap:4px;align-items:flex-end">
+        ${canEdit?`<button class="sm" onclick="openModal(${l.id})">✏️</button>`:''}
+        ${canEdit&&l.status!=='gecommuniceerd'?`<button class="sm teal" onclick="nextStatus(${l.id},'${l.status}')">→</button>`:''}
+        ${l.status==='ontvangen'&&canEdit?`<button class="sm amber" onclick="openSluiten(${l.id})">✓ Sluiten</button>`:''}
+        ${l.klant_email&&l.status==='gecommuniceerd'?`<button class="sm" onclick="mailKlant('${l.klant_email}','${esc(l.klant_naam)}','${l.leverdatum?fdt(l.leverdatum):"onbekend"}','${esc(l.product)}')">✉️</button>`:''}
+      </div>
+    </div>`;
+  });
+  h+=`</div>`;
   document.getElementById('content').innerHTML=h;
+}
+
+function nextStatus(id,current){
+  const flow={nieuw:'uitgevraagd',uitgevraagd:'ontvangen',ontvangen:'gecommuniceerd'};
+  const next=flow[current];
+  if(!next) return;
+  if(next==='gecommuniceerd'){openSluiten(id);return;}
+  updStatus(id,{status:next,bijgewerkt_op:new Date().toISOString()});
+}
+
+async function updStatus(id,body){
+  try{
+    await api('PATCH','/rest/v1/levertijden?id=eq.'+id,body);
+    const l=levertijden.find(x=>x.id===id);if(l)Object.assign(l,body);
+    render();toast('Status bijgewerkt.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}
+}
+
+function openSluiten(id){
+  sluitId=id;
+  const l=levertijden.find(x=>x.id===id);
+  document.getElementById('sl-d').value=l&&l.leverdatum?l.leverdatum:'';
+  document.getElementById('sl-n').value=l&&l.purchase_notitie?l.purchase_notitie:'';
+  document.getElementById('ov-sl').classList.add('open');
+}
+
+async function saveSluiten(){
+  const d=document.getElementById('sl-d').value;
+  const n=document.getElementById('sl-n').value.trim();
+  if(!d){toast('Vul de leveringsdatum in.');return;}
+  const btn=document.getElementById('btn-sl-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
+  try{
+    await updStatus(sluitId,{status:'gecommuniceerd',leverdatum:d,purchase_notitie:n||null,bijgewerkt_op:new Date().toISOString()});
+    document.getElementById('ov-sl').classList.remove('open');
+    toast('Verzoek gesloten.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+}
+
+function openModal(id){
+  const l=id?levertijden.find(x=>x.id===id):null;
+  editId=id||null;
+  document.getElementById('lv-kn').value=l?l.klant_naam:'';
+  document.getElementById('lv-ke').value=l?l.klant_email||'':'';
+  document.getElementById('lv-pr').value=l?l.product:'';
+  document.getElementById('lv-st').value=l?l.status:'nieuw';
+  document.getElementById('lv-ld').value=l?l.leverdatum||'':'';
+  document.getElementById('lv-pn').value=l?l.purchase_notitie||'':'';
+  document.getElementById('ov-lv').classList.add('open');
+}
+
+async function saveModal(){
+  const kn=document.getElementById('lv-kn').value.trim();
+  const pr=document.getElementById('lv-pr').value.trim();
+  if(!kn||!pr){toast('Vul klantnaam en product in.');return;}
+  const btn=document.getElementById('btn-lv-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
+  try{
+    const body={klant_naam:kn,klant_email:document.getElementById('lv-ke').value.trim()||null,product:pr,status:document.getElementById('lv-st').value,leverdatum:document.getElementById('lv-ld').value||null,purchase_notitie:document.getElementById('lv-pn').value.trim()||null,user_id:me.id,bijgewerkt_op:new Date().toISOString()};
+    if(editId) await api('PATCH','/rest/v1/levertijden?id=eq.'+editId,body);
+    else await api('POST','/rest/v1/levertijden',body);
+    document.getElementById('ov-lv').classList.remove('open');
+    await loadData();render();toast('Opgeslagen.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+}
+
+async function delLev(id){
+  if(!confirm('Verwijderen?'))return;
+  try{await api('DELETE','/rest/v1/levertijden?id=eq.'+id);levertijden=levertijden.filter(l=>l.id!==id);render();toast('Verwijderd.');}
+  catch(e){toast('Fout: '+e.message,'err');}
+}
+
+function mailKlant(email,naam,datum,product){
+  const sub=encodeURIComponent('Levertijd '+product+' — '+naam);
+  const body=encodeURIComponent('Beste '+naam+',\n\nHierbij bevestigen wij dat de verwachte levertijd voor '+product+' is: '+datum+'.\n\nMet vriendelijke groet,\n'+me.naam);
+  location.href='mailto:'+email+'?subject='+sub+'&body='+body;
 }
 
 init();

@@ -109,13 +109,13 @@ textarea{resize:vertical;min-height:80px}
   <div class="topbar-logo">The Branding <span>Club</span></div>
   <div class="topbar-right"><span class="topbar-user" id="topbar-user"></span><button class="btn-lo" onclick="logout()">↩</button></div>
 </div>
-<div class="content" id="content"><div class="empty"><span class="ld dk"></span><br><br>Laden...</div></div>
+<div class="content" id="content"><div class="empty"><span class="ld dk"></span></div></div>
 <nav class="bottom-nav">
-  <button class="bn-item" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
-  <button class="bn-item" onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span></button>
+  <button class="bn-item " onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
+  <button class="bn-item " onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span></button>
   <button class="bn-item active" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
-  <button class="bn-item" onclick="location.href='klachten.html'"><span class="ic">⚠️</span><span>Klachten</span></button>
-  <button class="bn-item" onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
+  <button class="bn-item " onclick="location.href='levertijden.html'"><span class="ic">📦</span><span>Lever</span></button>
+  <button class="bn-item " onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
 </nav>
 <div class="tw" id="tw"></div>
 
@@ -124,9 +124,10 @@ textarea{resize:vertical;min-height:80px}
 <div class="mt">Taak</div>
 <div class="field"><label>Omschrijving *</label><textarea id="tk-t" placeholder="Wat moet er gebeuren?" style="min-height:60px"></textarea></div>
 <div class="r2">
-  <div class="field"><label>Categorie</label><select id="tk-c"><option value="algemeen">Algemeen</option><option value="klant">Klant</option><option value="intern">Intern</option><option value="prospectie">Prospectie</option></select></div>
+  <div class="field"><label>Categorie</label><select id="tk-c" onchange="toggleKlantNaam()"><option value="klant">Klant</option><option value="algemeen">Algemeen</option><option value="intern">Intern</option><option value="prospectie">Prospectie</option></select></div>
   <div class="field"><label>Prioriteit</label><select id="tk-p"><option value="1">🔴 Hoog</option><option value="2" selected>🟡 Normaal</option><option value="3">🟢 Laag</option></select></div>
 </div>
+<div class="field" id="tk-kn-wrap"><label>Klantnaam</label><input type="text" id="tk-kn" placeholder="bijv. De Wildse Hut"/></div>
 <div class="field"><label>Datum</label><input type="date" id="tk-d"/></div>
 <div class="mf"><button onclick="document.getElementById('ov-taak').classList.remove('open')">Annuleren</button><button class="teal" id="btn-tk-s" onclick="saveTaak()">Opslaan</button></div>
 </div></div>
@@ -150,7 +151,7 @@ function pct(a,b){return b?Math.min(100,Math.round(a/b*100)):0;}
 function nowM(){return new Date().toISOString().slice(0,7);}
 function nowD(){return new Date().toISOString().slice(0,10);}
 function toast(msg,tp=''){const el=document.createElement('div');el.className='toast'+(tp?' '+tp:'');el.textContent=msg;let tw=document.getElementById('tw');if(!tw){tw=document.createElement('div');tw.id='tw';tw.className='tw';document.body.appendChild(tw);}tw.appendChild(el);setTimeout(()=>el.remove(),3500);}
-function esc(s){return String(s).replace(/'/g,"&apos;");}
+function esc(s){return String(s).replace(/\/g,'\\').replace(/'/g,"\'");}
 async function checkAuth(){
   const s=getSession();
   if(!s||!s.access_token){localStorage.clear();location.replace('login.html');return null;}
@@ -169,6 +170,7 @@ function isAdmin(me){return me&&me.rol==='admin';}
 
 let me=null, taken=[], profielen=[], regios=[];
 let editTaakId=null, viewUserId=null;
+let filterStatus='open', filterPrio='all', filterCat='all';
 
 async function init(){
   me=await checkAuth(); if(!me)return;
@@ -180,14 +182,13 @@ async function init(){
 async function loadData(){
   const isA=isAdmin(me);
   const today=nowD();
-  // Load taken — for admin: all, for user: own
   const tu=isA?'/rest/v1/taken?order=datum.asc,prioriteit.asc&select=*,profielen(naam,email)':'/rest/v1/taken?user_id=eq.'+me.id+'&order=datum.asc,prioriteit.asc';
   taken=await api('GET',tu)||[];
   if(isA){
     profielen=await api('GET','/rest/v1/profielen')||[];
     regios=await api('GET','/rest/v1/regios?order=naam.asc')||[];
   }
-  // Auto-rollover: update taken from past that are not voltooid to today
+  // Auto-rollover overdue tasks to today
   const overdue=taken.filter(t=>t.user_id===me.id&&!t.voltooid&&t.datum<today);
   for(const t of overdue){
     try{await api('PATCH','/rest/v1/taken?id=eq.'+t.id,{datum:today});}catch(e){}
@@ -195,88 +196,145 @@ async function loadData(){
   }
 }
 
-function render(){
-  const isA=isAdmin(me);
-  const today=nowD();
-  let h=`<div class="page-header"><div><div class="page-title">Taken</div><div class="page-sub">Onafgeronde taken schuiven door naar vandaag.</div></div><button class="teal sm" onclick="openTaakModal()">+ Taak</button></div>`;
-
-  if(isA && !viewUserId){
-    // Admin: per gebruiker
-    h+=`<div class="tag-row"><span class="tag active" onclick="viewUserId=null;render()">Iedereen</span>`;
-    profielen.filter(u=>u.rol!=='admin').forEach(u=>{
-      h+=`<span class="tag" onclick="viewUserId='${u.id}';render()">${u.naam||u.email}</span>`;
-    });
-    h+=`</div>`;
-    profielen.filter(u=>u.rol!=='admin').forEach(u=>{
-      const ut=taken.filter(t=>t.user_id===u.id);
-      const open=ut.filter(t=>!t.voltooid);
-      const reg=regios.find(r=>r.id===u.regio_id);
-      h+=`<div class="section-label">${u.naam||u.email} ${reg?'· '+reg.naam:''} — ${open.length} open</div>`;
-      if(!ut.length){h+=`<div style="font-size:13px;color:var(--muted);margin-bottom:1rem">Geen taken.</div>`;}
-      else {
-        h+=`<div class="card">`;
-        ut.filter(t=>!t.voltooid).forEach(t=>h+=taakRow(t));
-        ut.filter(t=>t.voltooid).forEach(t=>h+=taakRow(t));
-        h+=`</div>`;
-      }
-    });
-  } else {
-    const uid=viewUserId||me.id;
-    const myT=taken.filter(t=>t.user_id===uid);
-    if(isA && viewUserId){
-      const u=profielen.find(x=>x.id===viewUserId);
-      h+=`<div class="tag-row"><span class="tag" onclick="viewUserId=null;render()">← Terug</span><span class="tag active">${u?u.naam||u.email:'Gebruiker'}</span></div>`;
-    }
-    const open=myT.filter(t=>!t.voltooid);
-    const done=myT.filter(t=>t.voltooid);
-    // Sort: prio 1 first, then by datum
-    open.sort((a,b)=>a.prioriteit-b.prioriteit||a.datum.localeCompare(b.datum));
-    if(!open.length && !done.length){h+=`<div class="empty">Geen taken. Voeg er een toe!</div>`;}
-    if(open.length){
-      h+=`<div class="section-label">Open (${open.length})</div><div class="card">`;
-      open.forEach(t=>h+=taakRow(t));
-      h+=`</div>`;
-    }
-    if(done.length){
-      h+=`<div class="section-label">Afgerond (${done.length})</div><div class="card">`;
-      done.slice(0,5).forEach(t=>h+=taakRow(t));
-      h+=`</div>`;
-    }
-  }
-  document.getElementById('content').innerHTML=h;
-}
-
+let openKlant=null;
 const catColors={'algemeen':'b-user','klant':'b-open','intern':'b-behandeling','prospectie':'b-opgelost'};
+const prioColors={1:'cr',2:'ca',3:'cg'};
 const prioLabels={1:'🔴 Hoog',2:'🟡 Normaal',3:'🟢 Laag'};
 
-function taakRow(t){
-  const canEdit=t.user_id===me.id||isAdmin(me);
-  return `<div class="card-row" style="${t.voltooid?'opacity:.5':''}"><div style="display:flex;align-items:flex-start;gap:10px;flex:1">
-    <input type="checkbox" ${t.voltooid?'checked':''} onchange="toggleTaak(${t.id})" style="width:18px;height:18px;margin-top:2px;flex-shrink:0;accent-color:var(--teal)"/>
-    <div><div class="row-main" style="${t.voltooid?'text-decoration:line-through':''}">${t.tekst}</div>
-    <div class="row-sub">${prioLabels[t.prioriteit]||'Normaal'} · <span class="badge ${catColors[t.categorie]||'b-user'}">${t.categorie}</span> · ${fdt(t.datum)}</div>
-    </div>
-  </div>
-  ${canEdit?`<div class="row-right"><button class="sm" onclick="openTaakModal(${t.id})">✏️</button><button class="sm danger" onclick="delTaak(${t.id})">🗑</button></div>`:''}
+function filtered(takens){
+  let t=takens;
+  if(filterStatus==='open') t=t.filter(x=>!x.voltooid);
+  else if(filterStatus==='done') t=t.filter(x=>x.voltooid);
+  if(filterPrio!=='all') t=t.filter(x=>x.prioriteit===parseInt(filterPrio));
+  if(filterCat!=='all') t=t.filter(x=>x.categorie===filterCat);
+  return t;
+}
+
+function render(){
+  const isA=isAdmin(me);
+  const uid=viewUserId||me.id;
+  const myTaken=taken.filter(t=>t.user_id===uid);
+  const filt=filtered(myTaken);
+
+  let h=`<div class="page-header"><div><div class="page-title">Taken</div></div><button class="teal sm" onclick="openTaakModal()">+ Taak</button></div>`;
+
+  // Stats
+  const open=myTaken.filter(t=>!t.voltooid);
+  const done=myTaken.filter(t=>t.voltooid);
+  const high=open.filter(t=>t.prioriteit===1);
+  h+=`<div class="stats-row">
+    <div class="stat click${filterStatus==='open'?' act':''}" onclick="filterStatus='open';render()"><div class="sv cr">${open.length}</div><div class="sl">Open</div></div>
+    <div class="stat click${filterStatus==='done'?' act':''}" onclick="filterStatus='done';render()"><div class="sv cg">${done.length}</div><div class="sl">Afgerond</div></div>
+    <div class="stat click${filterStatus==='high'?' act':''}" onclick="filterStatus='all';filterPrio='1';render()"><div class="sv cr">${high.length}</div><div class="sl">🔴 Hoog</div></div>
+    <div class="stat click${filterStatus==='all'&&filterPrio==='all'?' act':''}" onclick="filterStatus='all';filterPrio='all';filterCat='all';render()"><div class="sv cn">${myTaken.length}</div><div class="sl">Totaal</div></div>
   </div>`;
+
+  // User switcher for admin
+  if(isA){
+    h+=`<div class="tag-row">`;
+    h+=`<span class="tag${!viewUserId?' active':''}" onclick="viewUserId=null;render()">Mijn taken</span>`;
+    profielen.filter(u=>u.rol!=='admin').forEach(u=>{
+      h+=`<span class="tag${viewUserId===u.id?' active':''}" onclick="viewUserId='${u.id}';render()">${u.naam||u.email}</span>`;
+    });
+    h+=`</div>`;
+  }
+
+  // Filter tabs
+  h+=`<div class="tag-row">
+    <span class="tag${filterCat==='all'?' active':''}" onclick="filterCat='all';render()">Alle</span>
+    <span class="tag${filterCat==='klant'?' active':''}" onclick="filterCat='klant';render()">Klant</span>
+    <span class="tag${filterCat==='intern'?' active':''}" onclick="filterCat='intern';render()">Intern</span>
+    <span class="tag${filterCat==='prospectie'?' active':''}" onclick="filterCat='prospectie';render()">Prospectie</span>
+    <span class="tag${filterCat==='algemeen'?' active':''}" onclick="filterCat='algemeen';render()">Algemeen</span>
+  </div>`;
+
+  if(!filt.length){
+    h+=`<div class="empty">Geen taken gevonden.</div>`;
+    document.getElementById('content').innerHTML=h;
+    return;
+  }
+
+  // Group by klant (categorie=klant) or by categorie
+  // First show klant-tagged tasks grouped by tekst prefix (first word as klant)
+  // Actually group by categorie then within klant group by first segment
+  const groups={};
+  filt.forEach(t=>{
+    // Use klant naam if set, else categorie
+    const grp = t.categorie==='klant' ? ('klant:' + (t.klant_naam||'Klant')) : t.categorie;
+    if(!groups[grp]) groups[grp]=[];
+    groups[grp].push(t);
+  });
+
+  // Sort groups: hoog prio first
+  const sortedGroups=Object.keys(groups).sort((a,b)=>{
+    const aMin=Math.min(...groups[a].map(t=>t.prioriteit));
+    const bMin=Math.min(...groups[b].map(t=>t.prioriteit));
+    return aMin-bMin;
+  });
+
+  sortedGroups.forEach(grp=>{
+    const items=groups[grp];
+    const isOpen=openKlant===grp;
+    const openCount=items.filter(t=>!t.voltooid).length;
+    const label=grp.startsWith('klant:')?grp.slice(6):grp.charAt(0).toUpperCase()+grp.slice(1);
+    const topPrio=Math.min(...items.map(t=>t.prioriteit));
+
+    h+=`<div class="card">
+      <div class="card-row click${isOpen?' act':''}" onclick="openKlant=openKlant==='${grp}'?null:'${grp}';render()">
+        <div><div class="row-main">${label}</div><div class="row-sub">${items.length} taak${items.length!==1?'en':''}${openCount>0?' · '+openCount+' open':''}</div></div>
+        <div class="row-right">
+          <span class="badge ${catColors[items[0].categorie]||'b-user'}">${items[0].categorie}</span>
+          <span style="font-size:13px">${prioLabels[topPrio]?.split(' ')[0]||''}</span>
+          <span class="chev${isOpen?' open':''}">▼</span>
+        </div>
+      </div>
+      <div class="dp${isOpen?' open':''}"><div class="di">`;
+
+    // Sort items within group: prio then date
+    items.sort((a,b)=>a.prioriteit-b.prioriteit||a.datum.localeCompare(b.datum));
+    items.forEach(t=>{
+      const canEdit=t.user_id===me.id||isA;
+      h+=`<div style="background:var(--bg);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;${t.voltooid?'opacity:.55':''}">
+        <input type="checkbox" ${t.voltooid?'checked':''} onchange="toggleTaak(${t.id})" style="width:18px;height:18px;margin-top:2px;flex-shrink:0;accent-color:var(--teal)"/>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:500;${t.voltooid?'text-decoration:line-through':''}">${t.tekst}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">${prioLabels[t.prioriteit]} · ${fdt(t.datum)}</div>
+        </div>
+        ${canEdit?`<div style="display:flex;gap:6px"><button class="sm" onclick="openTaakModal(${t.id})">✏️</button><button class="sm danger" onclick="delTaak(${t.id})">🗑</button></div>`:''}
+      </div>`;
+    });
+
+    h+=`</div></div></div>`;
+  });
+
+  document.getElementById('content').innerHTML=h;
 }
 
 function openTaakModal(id){
   const t=id?taken.find(x=>x.id===id):null;
   editTaakId=id||null;
   document.getElementById('tk-t').value=t?t.tekst:'';
-  document.getElementById('tk-c').value=t?t.categorie:'algemeen';
+  document.getElementById('tk-c').value=t?t.categorie:'klant';
   document.getElementById('tk-p').value=t?t.prioriteit:2;
   document.getElementById('tk-d').value=t?t.datum:nowD();
+  document.getElementById('tk-kn').value=t?t.klant_naam||'':'';
+  toggleKlantNaam();
   document.getElementById('ov-taak').classList.add('open');
+}
+
+function toggleKlantNaam(){
+  const cat=document.getElementById('tk-c').value;
+  document.getElementById('tk-kn-wrap').style.display=cat==='klant'?'block':'none';
 }
 
 async function saveTaak(){
   const tekst=document.getElementById('tk-t').value.trim();
+  const cat=document.getElementById('tk-c').value;
+  const kn=document.getElementById('tk-kn').value.trim();
   if(!tekst){toast('Vul een taak in.');return;}
   const btn=document.getElementById('btn-tk-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
   try{
-    const body={tekst,categorie:document.getElementById('tk-c').value,prioriteit:parseInt(document.getElementById('tk-p').value),datum:document.getElementById('tk-d').value,user_id:me.id};
+    const body={tekst,categorie:cat,prioriteit:parseInt(document.getElementById('tk-p').value),datum:document.getElementById('tk-d').value,user_id:me.id,klant_naam:cat==='klant'?kn||null:null};
     if(editTaakId) await api('PATCH','/rest/v1/taken?id=eq.'+editTaakId,body);
     else await api('POST','/rest/v1/taken',body);
     document.getElementById('ov-taak').classList.remove('open');
@@ -285,18 +343,14 @@ async function saveTaak(){
 }
 
 async function toggleTaak(id){
-  const t=taken.find(x=>x.id===id);
-  if(!t)return;
+  const t=taken.find(x=>x.id===id);if(!t)return;
   const vol=!t.voltooid;
-  try{
-    await api('PATCH','/rest/v1/taken?id=eq.'+id,{voltooid:vol,voltooid_op:vol?new Date().toISOString():null});
-    t.voltooid=vol;render();
-    if(vol)toast('Taak afgerond! ✓','ok');
-  }catch(e){toast('Fout: '+e.message,'err');}
+  try{await api('PATCH','/rest/v1/taken?id=eq.'+id,{voltooid:vol,voltooid_op:vol?new Date().toISOString():null});t.voltooid=vol;render();if(vol)toast('Taak afgerond! ✓','ok');}
+  catch(e){toast('Fout: '+e.message,'err');}
 }
 
 async function delTaak(id){
-  if(!confirm('Taak verwijderen?'))return;
+  if(!confirm('Verwijderen?'))return;
   try{await api('DELETE','/rest/v1/taken?id=eq.'+id);taken=taken.filter(t=>t.id!==id);render();toast('Verwijderd.');}
   catch(e){toast('Fout: '+e.message,'err');}
 }

@@ -111,10 +111,10 @@ textarea{resize:vertical;min-height:80px}
 </div>
 <div class="content" id="content"><div class="empty"><span class="ld dk"></span></div></div>
 <nav class="bottom-nav">
-  <button class="bn-item" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
-  <button class="bn-item" onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span></button>
-  <button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
-  <button class="bn-item" onclick="location.href='klachten.html'"><span class="ic">⚠️</span><span>Klachten</span></button>
+  <button class="bn-item " onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
+  <button class="bn-item " onclick="location.href='dagrapporten.html'"><span class="ic">📋</span><span>Dagrapport</span></button>
+  <button class="bn-item " onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
+  <button class="bn-item " onclick="location.href='levertijden.html'"><span class="ic">📦</span><span>Lever</span></button>
   <button class="bn-item active" onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
 </nav>
 <div class="tw" id="tw"></div>
@@ -267,92 +267,40 @@ function renderRegios(){
 
 function renderTargets(){
   let h=`<div style="display:flex;justify-content:flex-end;margin-bottom:.75rem"><button class="teal sm" onclick="openTM()">+ Target</button></div>`;
-  h+=`<div class="card">`;
-  if(!targets.length) h+=`<div class="empty">Geen targets.</div>`;
-  targets.slice(0,20).forEach(t=>{
-    const naam=t.type==='regio'?(regios.find(r=>r.id===t.regio_id)?.naam||'?'):(profielen.find(u=>u.id===t.user_id)?.naam||'?');
-    h+=`<div class="card-row"><div><div class="row-main">${naam} — ${t.periode}</div><div class="row-sub"><span class="badge ${t.type==='regio'?'b-behandeling':'b-user'}">${t.type}</span> · €${Number(t.omzet_target).toLocaleString('nl-NL')}</div></div>
-    <div class="row-right"><button class="sm danger" onclick="delTg(${t.id})">🗑</button></div></div>`;
-  });
-  h+=`</div>`;
+  
+  // Group by regio
+  if(regios.length){
+    regios.forEach(r=>{
+      const rt=targets.filter(t=>t.type==='regio'&&t.regio_id===r.id);
+      const ru=profielen.filter(u=>u.regio_id===r.id);
+      h+=`<div class="section-label">${r.naam}</div><div class="card">`;
+      // Regio target
+      if(rt.length) rt.forEach(t=>h+=targetRow(t,'regio',r.naam));
+      else h+=`<div style="padding:10px 16px;font-size:12px;color:var(--muted)">Geen regio-target</div>`;
+      // Per persoon
+      ru.forEach(u=>{
+        const ut=targets.filter(t=>t.type==='persoon'&&t.user_id===u.id);
+        if(ut.length) ut.forEach(t=>h+=targetRow(t,'persoon',u.naam||u.email));
+        else h+=`<div style="padding:8px 16px;font-size:12px;color:var(--muted)">↳ ${u.naam||u.email}: geen persoonlijk target</div>`;
+      });
+      h+=`</div>`;
+    });
+  }
+  // Targets without region
+  const noReg=targets.filter(t=>!regios.find(r=>r.id===t.regio_id)&&t.type==='persoon');
+  if(noReg.length){
+    h+=`<div class="section-label">Zonder regio</div><div class="card">`;
+    noReg.forEach(t=>{const u=profielen.find(x=>x.id===t.user_id);h+=targetRow(t,'persoon',u?u.naam||u.email:'?');});
+    h+=`</div>`;
+  }
+  if(!regios.length&&!targets.length) h+=`<div class="empty">Geen targets.</div>`;
   return h;
 }
 
-// GEBRUIKER
-function openUM(){
-  document.getElementById('um-n').value='';document.getElementById('um-e').value='';document.getElementById('um-p').value='';
-  document.getElementById('um-rol').value='gebruiker';
-  document.getElementById('um-r').innerHTML='<option value="">— Geen —</option>'+regios.map(r=>`<option value="${r.id}">${r.naam}</option>`).join('');
-  document.getElementById('um-id').value='';
-  document.getElementById('um-mt').textContent='Nieuwe gebruiker';
-  document.getElementById('um-p-wrap').style.display='block';
-  document.getElementById('ov-um').classList.add('open');
-}
-function openEditU(id,naam,email,rol,regioId){
-  document.getElementById('um-id').value=id;
-  document.getElementById('um-n').value=naam;
-  document.getElementById('um-e').value=email;
-  document.getElementById('um-p').value='';
-  document.getElementById('um-rol').value=rol;
-  document.getElementById('um-r').innerHTML='<option value="">— Geen —</option>'+regios.map(r=>`<option value="${r.id}"${r.id==regioId?' selected':''}>${r.naam}</option>`).join('');
-  document.getElementById('um-mt').textContent='Gebruiker bewerken';
-  document.getElementById('um-p-wrap').style.display='none';
-  document.getElementById('ov-um').classList.add('open');
-}
-async function saveUser(){
-  const id=document.getElementById('um-id').value;
-  const n=document.getElementById('um-n').value.trim();
-  const e=document.getElementById('um-e').value.trim();
-  const p=document.getElementById('um-p').value;
-  const rol=document.getElementById('um-rol').value;
-  const rid=document.getElementById('um-r').value;
-  const btn=document.getElementById('btn-um-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
-  try{
-    if(id){
-      // update profiel
-      await api('PATCH','/rest/v1/profielen?id=eq.'+id,{naam:n,rol,regio_id:rid?parseInt(rid):null});
-      if(p&&p.length>=6) await aApi('PUT','/auth/v1/admin/users/'+id,{password:p},true);
-      const u=profielen.find(x=>x.id===id);if(u){u.naam=n;u.rol=rol;u.regio_id=rid?parseInt(rid):null;}
-    } else {
-      if(!n||!e||!p){toast('Vul naam, e-mail en wachtwoord in.');return;}
-      const res=await aApi('POST','/auth/v1/admin/users',{email:e,password:p,email_confirm:true,user_metadata:{naam:n}},true);
-      await api('POST','/rest/v1/profielen',{id:res.id,email:e,naam:n,rol,regio_id:rid?parseInt(rid):null},true);
-      profielen.push({id:res.id,email:e,naam:n,rol,regio_id:rid?parseInt(rid):null});
-    }
-    document.getElementById('ov-um').classList.remove('open');
-    activeTab='gebruikers';render();toast('Opgeslagen.','ok');
-  }catch(ex){toast('Fout: '+ex.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+function targetRow(t,type,naam){
+  return `<div class="card-row"><div><div class="row-main" style="display:flex;align-items:center;gap:8px"><span class="badge ${type==='regio'?'b-behandeling':'b-user'}">${type}</span>${naam} — ${t.periode}</div><div class="row-sub">€${Number(t.omzet_target).toLocaleString('nl-NL')}</div></div><div class="row-right"><button class="sm danger" onclick="delTg(${t.id})">🗑</button></div></div>`;
 }
 
-// REGIO
-function openRM(id,naam){editRegioId=id||null;document.getElementById('rg-n').value=naam||'';document.getElementById('ov-rg').classList.add('open');}
-async function saveRegio(){
-  const n=document.getElementById('rg-n').value.trim();if(!n){toast('Naam verplicht.');return;}
-  const btn=document.getElementById('btn-rg-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
-  try{if(editRegioId){await api('PATCH','/rest/v1/regios?id=eq.'+editRegioId,{naam:n});const r=regios.find(x=>x.id===editRegioId);if(r)r.naam=n;}
-    else{const res=await api('POST','/rest/v1/regios',{naam:n});if(res&&res[0])regios.push(res[0]);}
-    document.getElementById('ov-rg').classList.remove('open');activeTab='regios';render();toast('Opgeslagen.','ok');
-  }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
-}
-async function delRg(id){if(!confirm('Verwijderen?'))return;try{await api('DELETE','/rest/v1/regios?id=eq.'+id);regios=regios.filter(r=>r.id!==id);activeTab='regios';render();toast('Verwijderd.');}catch(e){toast('Fout: '+e.message,'err');}}
-
-// TARGET
-function openTM(){
-  document.getElementById('tg-tp').value='regio';document.getElementById('tg-rw').style.display='block';document.getElementById('tg-uw').style.display='none';
-  document.getElementById('tg-r').innerHTML=regios.map(r=>`<option value="${r.id}">${r.naam}</option>`).join('');
-  document.getElementById('tg-u').innerHTML=profielen.map(u=>`<option value="${u.id}">${u.naam||u.email}</option>`).join('');
-  document.getElementById('tg-p').value=nowM();document.getElementById('tg-o').value='';
-  document.getElementById('ov-tg').classList.add('open');
-}
-async function saveTarget(){
-  const tp=document.getElementById('tg-tp').value;const per=document.getElementById('tg-p').value;const omz=parseFloat(document.getElementById('tg-o').value);
-  if(!per||isNaN(omz)){toast('Vul periode en target in.');return;}
-  const b={type:tp,periode:per,omzet_target:omz};
-  if(tp==='regio')b.regio_id=parseInt(document.getElementById('tg-r').value);else b.user_id=document.getElementById('tg-u').value;
-  const btn=document.getElementById('btn-tg-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
-  try{const res=await api('POST','/rest/v1/targets',b);if(res&&res[0])targets.unshift(res[0]);document.getElementById('ov-tg').classList.remove('open');activeTab='targets';render();toast('Opgeslagen.','ok');}
-  catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
-}
 async function delTg(id){if(!confirm('Verwijderen?'))return;try{await api('DELETE','/rest/v1/targets?id=eq.'+id);targets=targets.filter(t=>t.id!==id);render();toast('Verwijderd.');}catch(e){toast('Fout: '+e.message,'err');}}
 
 init();

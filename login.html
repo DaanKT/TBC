@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Inloggen — The Branding Club</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0B1F3A;
+    --navy-light: #1E3A5F;
+    --teal: #4FD1A5;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --border: #e2e5ea;
+    --text: #1a1f2e;
+    --muted: #6b7280;
+    --radius: 12px;
+    --radius-sm: 7px;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 400px;
+  }
+  .logo-area {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .logo {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .logo span { color: var(--teal); }
+  .logo-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 4px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 2rem;
+    border: 1px solid var(--border);
+  }
+  .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .card-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 1.75rem;
+  }
+  .field { margin-bottom: 1.1rem; }
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  input {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 13px;
+    color: var(--text);
+    background: var(--card);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(79,209,165,0.12); }
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    width: 100%;
+    padding: 11px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--teal);
+    color: var(--navy);
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn:hover { background: #3fbf95; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .error-msg {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    font-size: 13px;
+    padding: 10px 13px;
+    border-radius: var(--radius-sm);
+    margin-top: 1rem;
+    display: none;
+  }
+  .loader {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(11,31,58,0.3);
+    border-top-color: var(--navy);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.25);
+    margin-top: 1.5rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo-area">
+    <div class="logo">The Branding <span>Club</span></div>
+    <div class="logo-sub">Klachtenregistratie</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Inloggen</div>
+    <div class="card-sub">Gebruik je TBC e-mailadres en wachtwoord.</div>
+    <div class="field">
+      <label>E-mailadres</label>
+      <input type="email" id="email" placeholder="naam@thebrandingclub.com" autocomplete="email" />
+    </div>
+    <div class="field">
+      <label>Wachtwoord</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <button class="btn" id="btn-login" onclick="login()">Inloggen</button>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+  <div class="footer-note">Geen account? Neem contact op met Daniël.</div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://bstpobqvodljhpjzgnkp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
+
+document.getElementById('password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('btn-login');
+  const err = document.getElementById('error-msg');
+
+  if (!email || !password) { showError('Vul je e-mail en wachtwoord in.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Inloggen...';
+  err.style.display = 'none';
+
+  try {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error_description || data.msg || 'Inloggen mislukt.');
+
+    localStorage.setItem('tbc_session', JSON.stringify(data));
+    window.location.href = 'dashboard.html';
+  } catch(e) {
+    showError(e.message);
+    btn.disabled = false;
+    btn.innerHTML = 'Inloggen';
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// Al ingelogd? Doorsturen.
+const sess = localStorage.getItem('tbc_session');
+if (sess) { try { const s = JSON.parse(sess); if (s.access_token) window.location.href = 'dashboard.html'; } catch(e) {} }
+</script>
+</body>
+</html>

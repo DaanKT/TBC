@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard — The Branding Club</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0B1F3A; --navy-light: #1E3A5F; --teal: #4FD1A5;
+    --bg: #f4f5f7; --card: #ffffff; --border: #e2e5ea;
+    --text: #1a1f2e; --muted: #6b7280; --radius: 10px; --radius-sm: 6px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  header { background: var(--navy); padding: 0 1.5rem; height: 58px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .logo { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.05em; text-transform: uppercase; }
+  .logo span { color: var(--teal); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .user-chip { font-size: 12px; color: rgba(255,255,255,0.55); display:flex; align-items:center; gap:6px; }
+  .admin-badge { font-size: 10px; background: var(--teal); color: var(--navy); padding: 2px 7px; border-radius: 99px; font-weight: 700; }
+  .btn-logout { font-family: 'DM Sans', sans-serif; font-size: 12px; background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; }
+  .btn-logout:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
+  main { max-width: 920px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .stat { background: var(--card); border: 2px solid var(--border); border-radius: var(--radius); padding: 14px 16px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .stat:hover { border-color: #c5cad4; }
+  .stat.active-filter { border-color: var(--teal); background: #f0fdf4; }
+  .stat-num { font-size: 24px; font-weight: 700; line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .n-total { color: var(--text); } .n-open { color: #dc2626; } .n-beh { color: #d97706; } .n-opl { color: #16a34a; }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+  .toolbar-left { font-size: 13px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--card); color: var(--text); padding: 7px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.12s; }
+  button:hover { background: #f0f2f5; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+  button.primary:hover { background: var(--navy-light); }
+  button.teal { background: var(--teal); color: var(--navy); border-color: var(--teal); font-weight: 600; }
+  button.teal:hover { background: #3fbf95; }
+  button.danger { color: #dc2626; border-color: #fecaca; }
+  button.danger:hover { background: #fef2f2; }
+  button.small { font-size: 12px; padding: 5px 10px; }
+  .list-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .section-header { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 18px 8px; background: #f8f9fb; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .klant-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; user-select: none; }
+  .klant-row:hover { background: #f8f9fb; }
+  .klant-row.active { background: #f0fdf4; border-left: 3px solid var(--teal); padding-left: 15px; }
+  .klant-name { font-size: 14px; font-weight: 600; }
+  .klant-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .klant-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
+  .b-open { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+  .b-behandeling { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+  .b-wacht { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+  .b-opgelost { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+  .chevron { font-size: 11px; color: var(--muted); transition: transform 0.2s; }
+  .chevron.open { transform: rotate(180deg); }
+  .detail-panel { background: #f8f9fb; border-bottom: 1px solid var(--border); max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+  .detail-panel.open { max-height: 3000px; }
+  .detail-inner { padding: 16px 18px; }
+  .klacht-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 12px; }
+  .kc-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .kc-deal { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .kc-datum { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .kc-samen { font-size: 13px; color: var(--text); line-height: 1.55; margin-bottom: 10px; }
+  .kc-oplossing { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; color: #166534; margin-bottom: 10px; }
+  .kc-oplossing strong { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; color: #16a34a; }
+  .kc-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  select { font-family: 'DM Sans', sans-serif; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--card); color: var(--text); padding: 5px 8px; cursor: pointer; outline: none; }
+  .notities-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .notitie-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .notitie-item { display: flex; gap: 10px; margin-bottom: 8px; }
+  .notitie-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); flex-shrink: 0; margin-top: 5px; }
+  .notitie-tekst { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .notitie-meta { font-size: 11px; color: var(--muted); margin-top: 1px; font-family: 'DM Mono', monospace; }
+  .notitie-row { display: flex; gap: 8px; margin-top: 10px; }
+  .notitie-row input { font-family: 'DM Sans', sans-serif; font-size: 13px; flex: 1; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 10px; outline: none; color: var(--text); background: var(--card); }
+  .notitie-row input:focus { border-color: var(--teal); }
+  .detail-footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 14px; }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(11,31,58,0.55); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 500px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+  .field { margin-bottom: 14px; }
+  label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  input[type=text], input[type=email], input[type=password], textarea { font-family: 'DM Sans', sans-serif; font-size: 14px; width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text); background: var(--card); outline: none; transition: border-color 0.15s; }
+  input:focus, textarea:focus { border-color: var(--teal); }
+  textarea { resize: vertical; min-height: 80px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; width: fit-content; }
+  .tab { font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: calc(var(--radius) - 2px); border: none; background: none; color: var(--muted); cursor: pointer; }
+  .tab.active { background: var(--navy); color: #fff; }
+  .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 6px; }
+  .toast { background: var(--navy); color: #fff; font-size: 13px; padding: 10px 16px; border-radius: var(--radius-sm); animation: tin .2s ease; }
+  .toast.err { background: #dc2626; }
+  .toast.ok { background: #16a34a; }
+  @keyframes tin { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  .loader.dark { border-color: rgba(0,0,0,0.15); border-top-color: var(--navy); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .user-table { width: 100%; border-collapse: collapse; }
+  .user-table th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+  .user-table td { font-size: 13px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .user-table tr:last-child td { border-bottom: none; }
+  @media (max-width: 520px) { .stats-row { grid-template-columns: 1fr 1fr; } .row2 { grid-template-columns: 1fr; } .tabs { width: 100%; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">The Branding <span>Club</span></div>
+  <div class="header-right">
+    <span class="user-chip" id="user-chip">laden...</span>
+    <button class="btn-logout" onclick="logout()">Uitloggen</button>
+  </div>
+</header>
+
+<main>
+  <!-- Tabs (admin only) -->
+  <div class="tabs" id="tabs" style="display:none">
+    <button class="tab active" onclick="switchTab('klachten')">Klachten</button>
+    <button class="tab" onclick="switchTab('gebruikers')">Gebruikers</button>
+  </div>
+
+  <!-- Klachten view -->
+  <div id="view-klachten">
+    <div class="stats-row">
+      <div class="stat active-filter" id="stat-all" onclick="setFilter('all')">
+        <div class="stat-num n-total" id="s-total">—</div>
+        <div class="stat-label">Totaal</div>
+      </div>
+      <div class="stat" id="stat-open" onclick="setFilter('open')">
+        <div class="stat-num n-open" id="s-open">—</div>
+        <div class="stat-label">Open</div>
+      </div>
+      <div class="stat" id="stat-behandeling" onclick="setFilter('behandeling')">
+        <div class="stat-num n-beh" id="s-behandeling">—</div>
+        <div class="stat-label">In behandeling</div>
+      </div>
+      <div class="stat" id="stat-opgelost" onclick="setFilter('opgelost')">
+        <div class="stat-num n-opl" id="s-opgelost">—</div>
+        <div class="stat-label">Opgelost</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <span class="toolbar-left" id="toolbar-label">Klachten</span>
+      <div class="toolbar-right">
+        <button id="btn-export" style="display:none" onclick="mailOpen()">&#9993; Mail open klachten</button>
+        <button class="teal" onclick="openKlachtModal()">+ Nieuwe klacht</button>
+      </div>
+    </div>
+    <div class="list-card" id="list-card">
+      <div class="empty-state"><span class="loader dark"></span><br><br>Laden...</div>
+    </div>
+  </div>
+
+  <!-- Gebruikers view (admin only) -->
+  <div id="view-gebruikers" style="display:none">
+    <div class="toolbar">
+      <span class="toolbar-left">Gebruikers</span>
+      <div class="toolbar-right">
+        <button class="teal" onclick="openUserModal()">+ Nieuwe gebruiker</button>
+      </div>
+    </div>
+    <div class="list-card">
+      <table class="user-table" id="user-table">
+        <thead><tr><th>Naam</th><th>E-mail</th><th>Rol</th><th>Klachten</th></tr></thead>
+        <tbody id="user-tbody"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">Laden...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Klacht modal -->
+<div class="overlay" id="klacht-overlay" onclick="closeOvl('klacht-overlay',event)">
+  <div class="modal">
+    <div class="modal-title">Nieuwe klacht</div>
+    <div class="modal-sub">Vul de klachtdetails in.</div>
+    <div class="row2">
+      <div class="field"><label>Klantnaam *</label><input type="text" id="f-klant" placeholder="bijv. De Wildse Hut" /></div>
+      <div class="field"><label>Deal nummer</label><input type="text" id="f-deal" placeholder="optioneel" /></div>
+    </div>
+    <div class="field"><label>Samenvatting *</label><textarea id="f-samen" placeholder="Beschrijf de klacht concreet..."></textarea></div>
+    <div class="field"><label>Status</label>
+      <select id="f-status" style="width:100%;padding:9px 12px;font-size:14px;" onchange="toggleOplossing()">
+        <option value="open">Open</option>
+        <option value="behandeling">In behandeling</option>
+        <option value="wacht">Wacht op klant</option>
+        <option value="opgelost">Opgelost</option>
+      </select>
+    </div>
+    <div class="field" id="f-opl-wrap" style="display:none"><label>Oplossing *</label><textarea id="f-oplossing" placeholder="Hoe is dit opgelost?"></textarea></div>
+    <div class="modal-footer">
+      <button onclick="closeOvl('klacht-overlay')">Annuleren</button>
+      <button class="teal" id="btn-klacht-save" onclick="saveKlacht()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Oplossing modal -->
+<div class="overlay" id="opl-overlay" onclick="closeOvl('opl-overlay',event)">
+  <div class="modal">
+    <div class="modal-title">Klacht oplossen</div>
+    <div class="modal-sub">Beschrijf hoe de klacht is opgelost.</div>
+    <div class="field"><label>Oplossing *</label><textarea id="opl-tekst" placeholder="Beschrijf hoe dit is opgelost..."></textarea></div>
+    <div class="modal-footer">
+      <button onclick="closeOvl('opl-overlay')">Annuleren</button>
+      <button class="teal" id="btn-opl-save" onclick="saveOplossing()">Opslaan als opgelost</button>
+    </div>
+  </div>
+</div>
+
+<!-- Gebruiker modal -->
+<div class="overlay" id="user-overlay" onclick="closeOvl('user-overlay',event)">
+  <div class="modal">
+    <div class="modal-title">Nieuwe gebruiker aanmaken</div>
+    <div class="modal-sub">De gebruiker ontvangt geen automatische e-mail. Deel het wachtwoord zelf.</div>
+    <div class="field"><label>Naam</label><input type="text" id="u-naam" placeholder="Volledige naam" /></div>
+    <div class="field"><label>E-mailadres *</label><input type="email" id="u-email" placeholder="naam@thebrandingclub.com" /></div>
+    <div class="field"><label>Wachtwoord *</label><input type="password" id="u-pass" placeholder="minimaal 6 tekens" /></div>
+    <div class="modal-footer">
+      <button onclick="closeOvl('user-overlay')">Annuleren</button>
+      <button class="teal" id="btn-user-save" onclick="saveUser()">Aanmaken</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+const SB = 'https://bstpobqvodljhpjzgnkp.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
+
+// Service role key needed for admin user creation — stored separately
+const SVC = '';
+
+let session=null, profiel=null, allKlachten=[], allNotities=[], allProfielen=[];
+let openKlant=null, activeFilter='all', pendingOpl=null, activeTab='klachten';
+
+const SM = {
+  open:{label:'Open',cls:'b-open'},
+  behandeling:{label:'In behandeling',cls:'b-behandeling'},
+  wacht:{label:'Wacht op klant',cls:'b-wacht'},
+  opgelost:{label:'Opgelost',cls:'b-opgelost'}
+};
+
+function hdr(extra={}) {
+  return {'apikey':KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json','Prefer':'return=representation',...extra};
+}
+
+async function api(method, path, body) {
+  const res = await fetch(SB+path, {method, headers:hdr(), body:body?JSON.stringify(body):undefined});
+  const t = await res.text();
+  if(!res.ok) throw new Error(t);
+  return t?JSON.parse(t):null;
+}
+
+function toast(msg,type='') {
+  const el=document.createElement('div');
+  el.className='toast'+(type?' '+type:'');
+  el.textContent=msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
+
+function logout() { localStorage.removeItem('tbc_session'); location.href='login.html'; }
+
+function closeOvl(id,e) {
+  if(!e||e.target.classList.contains('overlay')) document.getElementById(id).classList.remove('open');
+}
+
+function toggleOplossing() {
+  document.getElementById('f-opl-wrap').style.display = document.getElementById('f-status').value==='opgelost'?'block':'none';
+}
+
+function switchTab(tab) {
+  activeTab=tab;
+  document.getElementById('view-klachten').style.display = tab==='klachten'?'block':'none';
+  document.getElementById('view-gebruikers').style.display = tab==='gebruikers'?'block':'none';
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='klachten'?0:1)));
+  if(tab==='gebruikers') renderUsers();
+}
+
+async function init() {
+  const raw=localStorage.getItem('tbc_session');
+  if(!raw){location.href='login.html';return;}
+  try{session=JSON.parse(raw);}catch(e){location.href='login.html';return;}
+  try {
+    const p=await api('GET','/rest/v1/profielen?id=eq.'+session.user.id);
+    if(!p||!p.length) throw new Error('Geen profiel');
+    profiel=p[0];
+    const chip=document.getElementById('user-chip');
+    chip.innerHTML=(profiel.naam||profiel.email)+(profiel.rol==='admin'?'<span class="admin-badge">Admin</span>':'');
+    if(profiel.rol==='admin') {
+      document.getElementById('tabs').style.display='flex';
+      document.getElementById('btn-export').style.display='inline-flex';
+    }
+    await loadAll();
+  } catch(e) {
+    toast('Sessie verlopen, opnieuw inloggen.','err');
+    setTimeout(()=>{localStorage.removeItem('tbc_session');location.href='login.html';},1800);
+  }
+}
+
+async function loadAll() {
+  const isAdmin=profiel.rol==='admin';
+  const kUrl=isAdmin
+    ?'/rest/v1/klachten?order=aangemaakt_op.asc&select=*,profielen(naam,email)'
+    :'/rest/v1/klachten?user_id=eq.'+profiel.id+'&order=aangemaakt_op.asc';
+  allKlachten=await api('GET',kUrl)||[];
+  const ids=allKlachten.map(k=>k.id);
+  if(ids.length) {
+    allNotities=await api('GET','/rest/v1/notities?klacht_id=in.('+ids.join(',')+')&order=aangemaakt_op.asc&select=*,profielen(naam,email)')||[];
+  } else { allNotities=[]; }
+  if(isAdmin) allProfielen=await api('GET','/rest/v1/profielen')||[];
+  render();
+}
+
+function setFilter(f) {
+  activeFilter=f; openKlant=null;
+  ['all','open','behandeling','opgelost'].forEach(k=>document.getElementById('stat-'+k).classList.toggle('active-filter',k===f));
+  render();
+}
+
+function filtered() {
+  if(activeFilter==='all') return allKlachten;
+  if(activeFilter==='behandeling') return allKlachten.filter(k=>k.status==='behandeling'||k.status==='wacht');
+  return allKlachten.filter(k=>k.status===activeFilter);
+}
+
+function byKlant(items) {
+  const m={};
+  items.forEach(k=>{if(!m[k.klant])m[k.klant]=[];m[k.klant].push(k);});
+  return m;
+}
+
+function renderStats() {
+  const k=allKlachten;
+  document.getElementById('s-total').textContent=k.length;
+  document.getElementById('s-open').textContent=k.filter(x=>x.status==='open').length;
+  document.getElementById('s-behandeling').textContent=k.filter(x=>x.status==='behandeling'||x.status==='wacht').length;
+  document.getElementById('s-opgelost').textContent=k.filter(x=>x.status==='opgelost').length;
+  const lbl={all:'Alle klachten',open:'Open klachten',behandeling:'In behandeling',opgelost:'Opgeloste klachten'};
+  document.getElementById('toolbar-label').textContent=lbl[activeFilter]||'Klachten';
+}
+
+function render() {
+  renderStats();
+  const c=document.getElementById('list-card');
+  const items=filtered();
+  const isAdmin=profiel.rol==='admin';
+  if(!items.length){c.innerHTML='<div class="empty-state">Geen klachten gevonden.</div>';return;}
+
+  if(isAdmin) {
+    const perUser={};
+    items.forEach(k=>{
+      const uid=k.user_id||'?';
+      const naam=k.profielen?(k.profielen.naam||k.profielen.email):'Onbekend';
+      if(!perUser[uid])perUser[uid]={naam,items:[]};
+      perUser[uid].items.push(k);
+    });
+    c.innerHTML=Object.keys(perUser).map(uid=>{
+      const u=perUser[uid];
+      const g=byKlant(u.items);
+      return `<div class="section-header"><span>${u.naam}</span><span style="font-size:12px;font-weight:400;">${u.items.length} klacht${u.items.length!==1?'en':''}</span></div>`
+        +Object.keys(g).map(kl=>klantRow(kl,g[kl])).join('');
+    }).join('');
+  } else {
+    const g=byKlant(items);
+    c.innerHTML=Object.keys(g).map(kl=>klantRow(kl,g[kl])).join('');
+  }
+}
+
+function klantRow(klant,items) {
+  const isOpen=openKlant===klant;
+  const oc=items.filter(k=>k.status!=='opgelost').length;
+  const ss=[...new Set(items.map(k=>k.status))];
+  const badges=ss.map(s=>`<span class="badge ${SM[s].cls}">${SM[s].label}</span>`).join('');
+  const detail=items.map(k=>klachtCard(k,klant)).join('');
+  return `<div>
+    <div class="klant-row${isOpen?' active':''}" onclick="tog('${esc(klant)}')">
+      <div><div class="klant-name">${klant}</div><div class="klant-meta">${items.length} klacht${items.length!==1?'en':''}${oc>0?' &middot; '+oc+' open':''}</div></div>
+      <div class="klant-right"><div style="display:flex;gap:4px;flex-wrap:wrap">${badges}</div><span class="chevron${isOpen?' open':''}">&#9660;</span></div>
+    </div>
+    <div class="detail-panel${isOpen?' open':''}">
+      <div class="detail-inner">${detail}
+        <div class="detail-footer"><button class="small" onclick="mailKlant('${esc(klant)}')">&#9993; Mail klachten van ${klant}</button></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function klachtCard(k,klant) {
+  const isAdmin=profiel.rol==='admin';
+  const canEdit=isAdmin||k.user_id===profiel.id;
+  const nots=allNotities.filter(n=>n.klacht_id===k.id);
+  const notsHtml=nots.length?nots.map(n=>`
+    <div class="notitie-item"><div class="notitie-dot"></div><div>
+      <div class="notitie-tekst">${n.tekst.replace(/</g,'&lt;')}</div>
+      <div class="notitie-meta">${n.profielen?(n.profielen.naam||n.profielen.email):''} &middot; ${fmt(n.aangemaakt_op)}</div>
+    </div></div>`).join('')
+    :'<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Nog geen notities.</div>';
+
+  const statusCtrl=canEdit
+    ?`<select onchange="statusChg(${k.id},this.value,'${esc(klant)}')">
+        <option value="open"${k.status==='open'?' selected':''}>Open</option>
+        <option value="behandeling"${k.status==='behandeling'?' selected':''}>In behandeling</option>
+        <option value="wacht"${k.status==='wacht'?' selected':''}>Wacht op klant</option>
+        <option value="opgelost"${k.status==='opgelost'?' selected':''}>Opgelost</option>
+      </select>`
+    :`<span class="badge ${SM[k.status].cls}">${SM[k.status].label}</span>`;
+
+  return `<div class="klacht-card" id="kc-${k.id}">
+    <div class="kc-meta">
+      <span class="badge ${SM[k.status].cls}">${SM[k.status].label}</span>
+      ${k.deal?`<span class="kc-deal">${k.deal}</span>`:''}
+      <span class="kc-datum">${fmt(k.aangemaakt_op)}</span>
+    </div>
+    <div class="kc-samen">${k.samenvatting.replace(/</g,'&lt;')}</div>
+    ${k.oplossing?`<div class="kc-oplossing"><strong>Oplossing</strong>${k.oplossing.replace(/</g,'&lt;')}</div>`:''}
+    <div class="kc-actions">
+      ${statusCtrl}
+      ${canEdit?`<button class="small danger" onclick="delKlacht(${k.id},'${esc(klant)}')">&#128465;</button>`:''}
+    </div>
+    <div class="notities-section">
+      <div class="notitie-label">Notities</div>
+      <div id="nots-${k.id}">${notsHtml}</div>
+      <div class="notitie-row">
+        <input type="text" id="ni-${k.id}" placeholder="Notitie toevoegen..." onkeydown="if(event.key==='Enter')addNot(${k.id},'${esc(klant)}')" />
+        <button class="small" onclick="addNot(${k.id},'${esc(klant)}')">+</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function tog(klant) { openKlant=openKlant===klant?null:klant; render(); }
+
+function statusChg(id,status,klant) {
+  if(status==='opgelost'){
+    pendingOpl={id,klant};
+    document.getElementById('opl-tekst').value='';
+    document.getElementById('opl-overlay').classList.add('open');
+    setTimeout(()=>document.getElementById('opl-tekst').focus(),50);
+  } else { updStatus(id,status,null,klant); }
+}
+
+async function saveOplossing() {
+  const tekst=document.getElementById('opl-tekst').value.trim();
+  if(!tekst){toast('Vul een oplossing in.');return;}
+  const btn=document.getElementById('btn-opl-save');
+  btn.disabled=true; btn.innerHTML='<span class="loader"></span>';
+  try { await updStatus(pendingOpl.id,'opgelost',tekst,pendingOpl.klant); closeOvl('opl-overlay'); }
+  finally { btn.disabled=false; btn.innerHTML='Opslaan als opgelost'; }
+}
+
+async function updStatus(id,status,opl,klant) {
+  try {
+    const body={status,bijgewerkt_op:new Date().toISOString()};
+    if(opl) body.oplossing=opl;
+    await api('PATCH','/rest/v1/klachten?id=eq.'+id,body);
+    const k=allKlachten.find(x=>x.id===id);
+    if(k){k.status=status;if(opl)k.oplossing=opl;}
+    openKlant=klant; render(); toast('Status bijgewerkt.','ok');
+  } catch(e){toast('Fout: '+e.message,'err');}
+}
+
+async function addNot(klachtId,klant) {
+  const inp=document.getElementById('ni-'+klachtId);
+  const tekst=inp.value.trim(); if(!tekst) return;
+  inp.value='';
+  try {
+    const res=await api('POST','/rest/v1/notities',{klacht_id:klachtId,user_id:profiel.id,tekst});
+    if(res&&res[0]){res[0].profielen={naam:profiel.naam,email:profiel.email};allNotities.push(res[0]);}
+    openKlant=klant; render(); toast('Notitie toegevoegd.','ok');
+  } catch(e){toast('Fout: '+e.message,'err');}
+}
+
+async function delKlacht(id,klant) {
+  if(!confirm('Klacht verwijderen?')) return;
+  try {
+    await api('DELETE','/rest/v1/klachten?id=eq.'+id);
+    allKlachten=allKlachten.filter(k=>k.id!==id);
+    allNotities=allNotities.filter(n=>n.klacht_id!==id);
+    openKlant=allKlachten.some(k=>k.klant===klant)?klant:null;
+    render(); toast('Klacht verwijderd.');
+  } catch(e){toast('Fout: '+e.message,'err');}
+}
+
+function openKlachtModal() {
+  ['f-klant','f-deal','f-samen','f-oplossing'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-status').value='open';
+  document.getElementById('f-opl-wrap').style.display='none';
+  document.getElementById('klacht-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('f-klant').focus(),50);
+}
+
+async function saveKlacht() {
+  const klant=document.getElementById('f-klant').value.trim();
+  const samen=document.getElementById('f-samen').value.trim();
+  const deal=document.getElementById('f-deal').value.trim();
+  const status=document.getElementById('f-status').value;
+  const opl=document.getElementById('f-oplossing').value.trim();
+  if(!klant||!samen){toast('Vul klantnaam en samenvatting in.');return;}
+  if(status==='opgelost'&&!opl){toast('Vul een oplossing in.');return;}
+  const btn=document.getElementById('btn-klacht-save');
+  btn.disabled=true; btn.innerHTML='<span class="loader"></span>';
+  try {
+    const body={klant,samenvatting:samen,deal:deal||null,status,user_id:profiel.id};
+    if(opl) body.oplossing=opl;
+    const res=await api('POST','/rest/v1/klachten?select=*,profielen(naam,email)',body);
+    if(res&&res[0]) allKlachten.push(res[0]);
+    openKlant=klant; closeOvl('klacht-overlay'); render(); toast('Klacht opgeslagen.','ok');
+  } catch(e){toast('Fout: '+e.message,'err');}
+  finally{btn.disabled=false;btn.innerHTML='Opslaan';}
+}
+
+function openUserModal() {
+  ['u-naam','u-email','u-pass'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('user-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('u-naam').focus(),50);
+}
+
+async function saveUser() {
+  const naam=document.getElementById('u-naam').value.trim();
+  const email=document.getElementById('u-email').value.trim();
+  const pass=document.getElementById('u-pass').value;
+  if(!email||!pass){toast('Vul e-mail en wachtwoord in.');return;}
+  if(pass.length<6){toast('Wachtwoord minimaal 6 tekens.');return;}
+  const btn=document.getElementById('btn-user-save');
+  btn.disabled=true; btn.innerHTML='<span class="loader"></span>';
+  try {
+    // Signup via Supabase Auth (anon key — werkt met email confirm uitgeschakeld)
+    const res=await fetch(SB+'/auth/v1/admin/users',{
+      method:'POST',
+      headers:{'apikey':KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pass,email_confirm:true,user_metadata:{naam}})
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.msg||data.message||JSON.stringify(data));
+    // Profiel aanmaken
+    await api('POST','/rest/v1/profielen',{id:data.id,email,naam:naam||null,rol:'gebruiker'});
+    allProfielen.push({id:data.id,email,naam,rol:'gebruiker'});
+    closeOvl('user-overlay'); renderUsers();
+    toast('Gebruiker '+email+' aangemaakt.','ok');
+  } catch(e){
+    // Fallback melding
+    toast('Aanmaken via dashboard lukt alleen met service role key. Maak de gebruiker aan via Supabase → Authentication → Users.','err');
+  }
+  finally{btn.disabled=false;btn.innerHTML='Aanmaken';}
+}
+
+function renderUsers() {
+  const tbody=document.getElementById('user-tbody');
+  if(!allProfielen.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">Geen gebruikers gevonden.</td></tr>';return;}
+  tbody.innerHTML=allProfielen.map(u=>`<tr>
+    <td>${u.naam||'—'}</td>
+    <td>${u.email}</td>
+    <td><span class="badge ${u.rol==='admin'?'b-behandeling':'b-wacht'}">${u.rol}</span></td>
+    <td>${allKlachten.filter(k=>k.user_id===u.id).length}</td>
+  </tr>`).join('');
+}
+
+function mailOpen() {
+  const open=allKlachten.filter(k=>k.status!=='opgelost');
+  if(!open.length){toast('Geen open klachten.');return;}
+  const g=byKlant(open);
+  const lines=['Hoi Matthijs,','','Open klachten overzicht:',''];
+  let n=1;
+  Object.keys(g).forEach(kl=>g[kl].forEach(k=>{
+    lines.push(n+++'. '+kl);
+    if(k.deal) lines.push('   Deal: '+k.deal);
+    lines.push('   Status: '+SM[k.status].label);
+    lines.push('   Klacht: '+k.samenvatting);
+    lines.push('');
+  }));
+  lines.push('Met vriendelijke groet,','Daniël');
+  location.href='mailto:matthijs@thebranding.club?subject='+encodeURIComponent('Open klachten — '+new Date().toLocaleDateString('nl-NL'))+'&body='+encodeURIComponent(lines.join('\n'));
+}
+
+function mailKlant(klant) {
+  const items=allKlachten.filter(k=>k.klant===klant);
+  const lines=['Hoi Matthijs,','','Klachten voor '+klant+':',''];
+  items.forEach((k,i)=>{
+    lines.push((i+1)+'. '+(k.deal?k.deal+' — ':'')+SM[k.status].label);
+    lines.push('   '+k.samenvatting);
+    if(k.oplossing) lines.push('   Oplossing: '+k.oplossing);
+    lines.push('');
+  });
+  lines.push('Met vriendelijke groet,','Daniël');
+  location.href='mailto:matthijs@thebranding.club?subject='+encodeURIComponent('Klachten '+klant)+'&body='+encodeURIComponent(lines.join('\n'));
+}
+
+function fmt(d){return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',month:'short',year:'numeric'});}
+function esc(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+
+init();
+</script>
+</body>
+</html>

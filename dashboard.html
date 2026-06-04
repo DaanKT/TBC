@@ -820,13 +820,37 @@ let notifTargetId = null;
 function openNotifModal(type, id, naam) {
   notifTarget = type;
   notifTargetId = id || null;
-  document.getElementById('nm-target').textContent = 
-    type === 'all' ? 'Heel team' : 
-    type === 'regio' ? 'Regio: ' + naam : 
-    naam;
   document.getElementById('nm-title').value = '';
   document.getElementById('nm-msg').value = '';
+  
+  // Build target selector buttons
+  let btns = '';
+  // Heel team button
+  btns += `<button class="sm${notifTarget==='all'?' teal':''}" onclick="setNotifTarget('all',null,'Heel team');renderNotifBtns()"style="flex:0 0 auto">👥 Heel team</button>`;
+  // Per regio
+  regios.forEach(r => {
+    const isActive = notifTarget==='regio' && notifTargetId==r.id;
+    btns += `<button class="sm${isActive?' teal':''}" onclick="setNotifTarget('regio','${r.id}','${r.naam}');renderNotifBtns()"style="flex:0 0 auto">🗺️ ${r.naam}</button>`;
+  });
+  // Per persoon
+  const medewerkers = profielen.filter(u=>u.rol==='gebruiker'&&u.regio_id);
+  medewerkers.forEach(u => {
+    const isActive = notifTarget==='user' && notifTargetId===u.id;
+    btns += `<button class="sm${isActive?' teal':''}" onclick="setNotifTarget('user','${u.id}','${u.naam||u.email}');renderNotifBtns()"style="flex:0 0 auto">👤 ${u.naam||u.email}</button>`;
+  });
+  
+  document.getElementById('nm-target-btns').innerHTML = btns;
   document.getElementById('ov-notif').classList.add('open');
+}
+
+function setNotifTarget(type, id, naam) {
+  notifTarget = type;
+  notifTargetId = id || null;
+}
+
+function renderNotifBtns() {
+  // Re-open to refresh button states
+  openNotifModal(notifTarget, notifTargetId, '');
 }
 
 async function saveNotif() {
@@ -851,7 +875,10 @@ init();
 <div class="overlay" id="ov-notif" onclick="if(event.target===this)this.classList.remove('open')">
 <div class="modal"><div class="modal-handle"></div>
 <div class="mt">🔔 Melding sturen</div>
-<div class="ms">Aan: <strong id="nm-target"></strong></div>
+<div class="field" id="nm-target-wrap">
+  <label>Aan wie</label>
+  <div id="nm-target-btns" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px"></div>
+</div>
 <div class="field"><label>Titel *</label><input type="text" id="nm-title" placeholder="bijv. Actie vereist!" maxlength="50"/></div>
 <div class="field"><label>Bericht *</label><textarea id="nm-msg" placeholder="Je bericht..." style="min-height:80px" maxlength="200"></textarea></div>
 <div class="mf"><button onclick="document.getElementById('ov-notif').classList.remove('open')">Annuleren</button><button class="teal" id="btn-nm-s" onclick="saveNotif()">Versturen 🚀</button></div>

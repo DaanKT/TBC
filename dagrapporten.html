@@ -141,6 +141,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="overlay" id="ov-commit" onclick="if(event.target===this)this.classList.remove('open')">
 <div class="modal"><div class="modal-handle"></div>
 <div class="mt">Commitment invoeren</div>
+<div class="field" id="cm-user-wrap" style="display:none"><label>Voor wie</label><select id="cm-user"></select></div>
 <div class="field"><label>Datum *</label><input type="date" id="cm-d"/></div>
 <div class="field"><label>Omzet forecast (€) *</label><input type="number" id="cm-o" placeholder="2500" min="0" step="100"/></div>
 <div class="mf"><button onclick="document.getElementById('ov-commit').classList.remove('open')">Annuleren</button><button class="teal" id="btn-cm-s" onclick="saveCommit()">Opslaan</button></div>
@@ -425,9 +426,19 @@ async function saveDag(){
 }
 
 function openCommitModal(){
+  const isA=isAdmin(me);
   const tom=new Date();tom.setDate(tom.getDate()+1);
   document.getElementById('cm-d').value=tom.toISOString().slice(0,10);
   document.getElementById('cm-o').value='';
+  // Admin can pick user and past dates
+  const wrap=document.getElementById('cm-user-wrap');
+  if(isA){
+    wrap.style.display='block';
+    const allU=[{id:me.id,naam:(me.naam||me.email)+' (jij)'},...profielen.filter(u=>u.id!==me.id)];
+    document.getElementById('cm-user').innerHTML=allU.map(u=>`<option value="${u.id}">${u.naam||u.email}</option>`).join('');
+  } else {
+    wrap.style.display='none';
+  }
   document.getElementById('ov-commit').classList.add('open');
 }
 
@@ -435,11 +446,15 @@ async function saveCommit(){
   const d=document.getElementById('cm-d').value;
   const o=parseFloat(document.getElementById('cm-o').value);
   if(!d||isNaN(o)){toast('Vul datum en omzet in.');return;}
+  const isA=isAdmin(me);
+  const selUid=isA&&document.getElementById('cm-user')?document.getElementById('cm-user').value:me.id;
+  const selUser=isA?profielen.find(u=>u.id===selUid)||me:me;
   const btn=document.getElementById('btn-cm-s');btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
   try{
-    await api('POST','/rest/v1/commitments',{user_id:me.id,regio_id:me.regio_id||null,datum:d,omzet_forecast:o});
+    await api('POST','/rest/v1/commitments',{user_id:selUid,regio_id:selUser.regio_id||null,datum:d,omzet_forecast:o});
     document.getElementById('ov-commit').classList.remove('open');
-    await loadData();renderCommits();toast('Commitment opgeslagen.','ok');
+    await loadData();renderCommits();
+    toast('Commitment opgeslagen'+(isA&&selUid!==me.id?' voor '+( selUser.naam||selUser.email):'')+'.','ok');
   }catch(e){toast('Fout: '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML='Opslaan';}
 }
 

@@ -410,7 +410,13 @@ function renderMedewerker(){
         h+=`<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:6px;font-style:italic">Plan was: ${ystDag.notitie}</div>`;
       }
     } else {
-      h+=`<div style="font-size:14px;color:rgba(255,255,255,.7)">Vandaag target: <span style="color:#4FD1A5">${eur(target)}</span></div>`;
+      // Commit van vandaag = commit_morgen van gisteren dagrapport
+      const vandaagCommit=ystDag?.commit_morgen||null;
+      if(vandaagCommit){
+        h+=`<div style="font-size:14px;color:rgba(255,255,255,.7)">Commit vandaag: <span style="color:#4FD1A5">${eur(vandaagCommit)}</span></div>`;
+      } else {
+        h+=`<div style="font-size:14px;color:rgba(255,255,255,.7)">Nog geen commit voor vandaag. Stel er een in! 🎯</div>`;
+      }
     }
     h+=`</div>`;
   }

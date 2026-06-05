@@ -381,16 +381,38 @@ function renderMedewerker(){
   document.getElementById('tbr').innerHTML='';
   let h='';
 
-  // ── GISTEREN COMMIT BEVESTIGEN ──
+  // ── GOEDEMORGEN BLOKJE (altijd tonen) + COMMIT BEVESTIGEN ──
+  const uur=new Date().getHours();
+  const begroeting=uur<12?'Goedemorgen':uur<18?'Goedemiddag':'Goedenavond';
+  const begroetingEmoji=uur<12?'☀️':uur<18?'👋':'🌙';
+  const voornaam=me.naam?.split(' ')[0]||'';
+
   if(ystCommit){
+    // Openstaande commit — bevestigen
     h+=`<div style="background:linear-gradient(135deg,#0B1F3A,#1E3A5F);border-radius:var(--r);padding:16px;margin-bottom:1rem">
-      <div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${new Date().getHours()<12?'Goedemorgen':new Date().getHours()<18?'Goedemiddag':'Goedenavond'} ${me.naam?.split(' ')[0]||''}! ${new Date().getHours()<12?'☀️':new Date().getHours()<18?'👋':'🌙'}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${begroeting} ${voornaam}! ${begroetingEmoji}</div>
       <div style="font-size:15px;font-weight:600;color:#fff;margin-bottom:4px">Je commit was <span style="color:#4FD1A5">${eur(ystCommit.omzet_forecast)}</span> — gehaald?</div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <button onclick="quickBev(${ystCommit.id})" style="background:#4FD1A5;color:#0B1F3A;border:none;border-radius:var(--rs);padding:10px;font-size:13px;font-weight:700;flex:1;cursor:pointer">✓ Ja!</button>
         <button onclick="openBevModal(${ystCommit.id})" style="background:rgba(255,255,255,.1);color:#fff;border:0.5px solid rgba(255,255,255,.2);border-radius:var(--rs);padding:10px;font-size:13px;flex:1;cursor:pointer">Gedeeltelijk</button>
       </div>
     </div>`;
+  } else {
+    // Geen openstaande commit — toon goedemorgen + check van gisteren
+    const ystBevestigdCommit=commits.find(c=>c.user_id===me.id&&c.datum===yesterday&&c.bevestigd);
+    h+=`<div style="background:linear-gradient(135deg,#0B1F3A,#1E3A5F);border-radius:var(--r);padding:16px;margin-bottom:1rem">
+      <div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${begroeting} ${voornaam}! ${begroetingEmoji}</div>`;
+    if(ystBevestigdCommit){
+      const gehaald=ystBevestigdCommit.gehaald;
+      h+=`<div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:2px">Commit gisteren: <span style="color:#4FD1A5">${eur(ystBevestigdCommit.omzet_forecast)}</span></div>
+      <div style="font-size:13px;color:${gehaald?'#4FD1A5':'#f87171'};margin-top:4px">${gehaald?'✅ Gehaald':'❌ Gemist'} — werkelijk: ${eur(ystBevestigdCommit.omzet_actuals)}</div>`;
+      if(!gehaald&&ystDag&&ystDag.notitie){
+        h+=`<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:6px;font-style:italic">Plan was: ${ystDag.notitie}</div>`;
+      }
+    } else {
+      h+=`<div style="font-size:14px;color:rgba(255,255,255,.7)">Vandaag target: <span style="color:#4FD1A5">${eur(target)}</span></div>`;
+    }
+    h+=`</div>`;
   }
 
   // ── ON TRACK BANNER ──
@@ -466,7 +488,8 @@ function renderMedewerker(){
   <div style="background:#0B1F3A;border-radius:var(--r);padding:16px;margin-bottom:1rem">
     ${ystDag?`<div style="background:rgba(255,255,255,.07);border-radius:var(--rs);padding:10px 12px;margin-bottom:12px">
       <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:3px">Gisteren</div>
-      <div style="font-size:13px;color:rgba(255,255,255,.8)">Productie: <strong style="color:#fff">${eur(ystDag.productie_vandaag)}</strong> · Commit morgen was: <strong style="color:#4FD1A5">${eur(ystDag.commit_morgen)}</strong></div>
+      <div style="font-size:13px;color:rgba(255,255,255,.8)">Productie: <strong style="color:#fff">${eur(ystDag.productie_vandaag)}</strong> · Commit vandaag: <strong style="color:#4FD1A5">${eur(ystDag.commit_morgen)}</strong></div>
+      ${ystDag.notitie?`<div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-style:italic">💬 ${ystDag.notitie}</div>`:''}
     </div>`:''}
     <div class="field" style="margin-bottom:10px">
       <label style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px">Productie intake vandaag (€)</label>
@@ -603,7 +626,8 @@ function renderAdmin(){
           <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border)">
             <div style="flex:1">
               <div style="font-size:13px;font-weight:500">${fdt(c.datum)} — ${eur(c.omzet_forecast)}</div>
-              ${c.bevestigd?`<div style="font-size:11px;color:${c.gehaald?'var(--green)':'var(--red)'}">${c.gehaald?'✓ Gehaald':'✗ Gemist'} — ${eur(c.omzet_actuals)}</div>`:'<div style="font-size:11px;color:var(--muted)">Open</div>'}
+              ${c.bevestigd?`<div style="font-size:11px;color:${c.gehaald?'var(--green)':'var(--red)'}">${c.gehaald?'✓ Gehaald':'✗ Gemist'} — ${eur(c.omzet_actuals)}</div>
+              ${(()=>{const dr=dagrapporten.find(d=>d.user_id===u.id&&d.datum===c.datum);return dr&&dr.notitie?`<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:2px">💬 ${dr.notitie}</div>`:'';})()}`:'<div style="font-size:11px;color:var(--muted)">Open</div>'}
             </div>
             ${isSuperAdmin(me)||isRegioAdmin(me)?`<button class="sm" onclick="openEditCommit(${c.id},'${esc(u.naam||u.email)}',${c.omzet_forecast},'${c.datum}')">✏️</button>`:''}
           </div>`).join(''):'<div style="font-size:13px;color:var(--muted)">Geen commits.</div>'}
@@ -750,37 +774,19 @@ async function registerServiceWorker() {
 async function requestPushPermission() {
   const reg = await registerServiceWorker();
   if (!reg) { toast('Push notificaties worden niet ondersteund op dit apparaat.', 'err'); return; }
-
-  // HTTPS check
-  if (location.protocol !== 'https:') {
-    toast('Push werkt alleen via HTTPS. Schakel HTTPS in via GitHub Pages instellingen.', 'err');
-    console.error('Push geblokkeerd: geen HTTPS');
-    return;
-  }
-
+  
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') { toast('Notificaties geweigerd. Pas dit aan in je browserinstellingen.'); return; }
-
+  
   try {
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
-
+    
     const subData = sub.toJSON();
     const s = getSession();
-
-    // Sessie check
-    if (!s || !s.access_token) {
-      toast('Sessie verlopen. Log opnieuw in.', 'err');
-      console.error('Push geblokkeerd: geen geldige sessie', s);
-      return;
-    }
-
-    console.log('Push subscription aanmaken voor user:', me?.id);
-    console.log('Endpoint:', subData.endpoint);
-
-    const resp = await fetch('https://bstpobqvodljhpjzgnkp.supabase.co/rest/v1/push_subscriptions', {
+    await fetch('https://bstpobqvodljhpjzgnkp.supabase.co/rest/v1/push_subscriptions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -795,23 +801,12 @@ async function requestPushPermission() {
         auth: subData.keys?.auth
       })
     });
-
-    if (!resp.ok) {
-      const errText = await resp.text();
-      console.error('Supabase fout bij opslaan subscription:', resp.status, errText);
-      toast('Opslaan mislukt (' + resp.status + '): ' + errText, 'err');
-      return;
-    }
-
-    console.log('Subscription opgeslagen ✅');
+    
     toast('Meldingen ingeschakeld! ✅', 'ok');
     document.getElementById('push-btn')?.remove();
     document.getElementById('push-status')?.remove();
     checkPushStatus();
-  } catch(e) {
-    console.error('Push fout:', e);
-    toast('Kon niet inschrijven: ' + e.message, 'err');
-  }
+  } catch(e) { toast('Kon niet inschrijven: ' + e.message, 'err'); }
 }
 
 async function checkPushStatus() {

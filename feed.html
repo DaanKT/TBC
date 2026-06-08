@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Feed — TBC</title>
+<link rel="apple-touch-icon" href="icon.svg"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="manifest" href="manifest.json"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0B1F3A;--navy-l:#1E3A5F;--teal:#4FD1A5;--bg:#f0f2f5;--card:#fff;--border:#e2e5ea;--text:#1a1f2e;--muted:#6b7280;--red:#dc2626;--amber:#d97706;--green:#16a34a;--blue:#2563eb;--purple:#7c3aed;--r:12px;--rs:8px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px}
+.topbar{background:var(--navy);padding:0 1rem;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.topbar-logo{font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.06em}
+.topbar-logo span{color:var(--teal)}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.topbar-user{font-size:12px;color:rgba(255,255,255,.5)}
+.btn-lo{font-family:'DM Sans',sans-serif;font-size:12px;background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.5);padding:4px 10px;border-radius:var(--rs);cursor:pointer}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:40;height:60px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 4px}
+.bottom-nav::-webkit-scrollbar{display:none}
+.bn-item{min-width:60px;flex:1;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:500;color:var(--muted);cursor:pointer;border:none;background:none;position:relative}
+.bn-item.active{color:var(--teal)}
+.bn-item .ic{font-size:20px;line-height:1}
+.bn-badge{position:absolute;top:6px;right:calc(50% - 18px);background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px}
+.content{padding:0;max-width:720px;margin:0 auto;display:flex;flex-direction:column;height:calc(100vh - 54px - 60px)}
+.feed-messages{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
+.feed-messages::-webkit-scrollbar{width:3px}
+.feed-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.msg-group{display:flex;gap:10px;align-items:flex-start}
+.msg-group.own{flex-direction:row-reverse}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;border:2px solid var(--border)}
+.av-da{background:rgba(79,209,165,.15);color:#0d6e52;border-color:rgba(79,209,165,.3)}
+.av-se{background:rgba(37,99,235,.15);color:var(--blue);border-color:rgba(37,99,235,.3)}
+.av-mi{background:rgba(124,58,237,.15);color:var(--purple);border-color:rgba(124,58,237,.3)}
+.av-sy{background:rgba(22,163,74,.1);color:var(--green);border-color:rgba(22,163,74,.2)}
+.bubble{max-width:75%;background:var(--card);border-radius:4px 12px 12px 12px;padding:9px 12px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.msg-group.own .bubble{background:var(--navy);border-color:var(--navy-l);color:#fff;border-radius:12px 4px 12px 12px}
+.bubble-name{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:3px}
+.msg-group.own .bubble-name{color:rgba(255,255,255,.5)}
+.bubble-text{font-size:13px;line-height:1.5}
+.msg-group.own .bubble-text{color:#fff}
+.bubble-time{font-size:10px;color:var(--muted);margin-top:4px;text-align:right}
+.msg-group.own .bubble-time{color:rgba(255,255,255,.4)}
+.mention{color:var(--teal);font-weight:600}
+.sys-msg{text-align:center;font-size:12px;color:var(--muted);padding:4px 12px;background:var(--border);border-radius:99px;width:fit-content;margin:0 auto}
+.sys-msg.win{background:rgba(22,163,74,.1);color:var(--green);border:1px solid rgba(22,163,74,.2)}
+.sys-msg.streak{background:rgba(217,119,6,.1);color:var(--amber);border:1px solid rgba(217,119,6,.2)}
+.input-area{background:var(--card);border-top:1px solid var(--border);padding:10px 16px;display:flex;align-items:flex-end;gap:8px}
+.input-box{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;resize:none;max-height:120px;min-height:40px;line-height:1.4}
+.input-box:focus{border-color:var(--teal)}
+.send-btn{width:40px;height:40px;border-radius:50%;background:var(--teal);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;transition:background .15s}
+.send-btn:hover{background:#3ab891}
+.mentions-popup{position:absolute;bottom:100%;left:16px;right:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:6px;box-shadow:0 -4px 20px rgba(0,0,0,.1);max-height:200px;overflow-y:auto;display:none;z-index:10}
+.mentions-popup.open{display:block}
+.mention-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--rs);cursor:pointer}
+.mention-item:hover{background:var(--bg)}
+.mention-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.tw{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:6px;width:90%;max-width:400px}
+.toast{background:var(--navy);color:#fff;font-size:13px;padding:10px 16px;border-radius:var(--rs);animation:tin .2s ease;text-align:center}
+.toast.ok{background:var(--green)}.toast.err{background:var(--red)}
+@keyframes tin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ld{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+.ld.dk{border-color:rgba(0,0,0,.1);border-top-color:var(--navy)}
+@keyframes sp{to{transform:rotate(360deg)}}
+.date-divider{text-align:center;font-size:11px;color:var(--muted);position:relative;margin:4px 0}
+.date-divider::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--border)}
+.date-divider span{background:var(--bg);padding:0 10px;position:relative}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-logo">The Branding <span>Club</span></div>
+  <div class="topbar-right">
+    <span class="topbar-user" id="topbar-user"></span>
+    <button class="btn-lo" onclick="logout()">↩</button>
+  </div>
+</div>
+
+<div class="content">
+  <div class="feed-messages" id="feed-messages">
+    <div style="text-align:center;padding:2rem;color:var(--muted)"><span class="ld dk"></span><br><br>Feed laden...</div>
+  </div>
+  <div style="position:relative">
+    <div class="mentions-popup" id="mentions-popup"></div>
+    <div class="input-area">
+      <textarea class="input-box" id="msg-input" placeholder="Stuur een bericht... Typ @ om iemand te taggen" rows="1" oninput="autoResize(this);checkMention(this)"></textarea>
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="bn-item" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
+  <button class="bn-item" onclick="location.href='offertes.html'"><span class="ic">📋</span><span>Offertes</span></button>
+  <button class="bn-item active"><span class="ic">💬</span><span>Feed</span></button>
+  <button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
+  <button class="bn-item" onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
+</nav>
+<div class="tw" id="tw"></div>
+
+<script>
+const SB='https://bstpobqvodljhpjzgnkp.supabase.co';
+const AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
+function getSession(){try{return JSON.parse(localStorage.getItem('tbc_session'));}catch(e){return null;}}
+function getMe(){try{return JSON.parse(localStorage.getItem('tbc_me'));}catch(e){return null;}}
+function logout(){localStorage.removeItem('tbc_session');localStorage.removeItem('tbc_me');location.href='login.html';}
+function hdr(){const s=getSession();return{'apikey':AK,'Authorization':'Bearer '+(s?s.access_token:''),'Content-Type':'application/json','Prefer':'return=representation'};}
+async function api(m,p,b){const r=await fetch(SB+p,{method:m,headers:hdr(),body:b?JSON.stringify(b):undefined});const t=await r.text();if(!r.ok)throw new Error(t);return t?JSON.parse(t):null;}
+function toast(msg,tp=''){const el=document.createElement('div');el.className='toast'+(tp?' '+tp:'');el.textContent=msg;document.getElementById('tw').appendChild(el);setTimeout(()=>el.remove(),3500);}
+function fdt(d){return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',month:'short'});}
+function ftm(d){return new Date(d).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
+
+let me=null, profielen=[], berichtenCache=[];
+const avatarColors={'da':'av-da','se':'av-se','mi':'av-mi'};
+
+async function checkAuth(){
+  const s=getSession();
+  if(!s||!s.access_token){localStorage.clear();location.replace('login.html');return null;}
+  let m=getMe();if(m&&m.id)return m;
+  try{const p=await api('GET','/rest/v1/profielen?id=eq.'+s.user.id);if(p&&p.length){localStorage.setItem('tbc_me',JSON.stringify(p[0]));return p[0];}}catch(e){}
+  localStorage.clear();location.replace('login.html');return null;
+}
+
+function getAvatarClass(userId){
+  const initials=(profielen.find(p=>p.id===userId)?.naam||'?').slice(0,2).toUpperCase();
+  const colors=['av-da','av-se','av-mi'];
+  const idx=profielen.findIndex(p=>p.id===userId)%colors.length;
+  return {cls:colors[Math.max(0,idx)],initials};
+}
+
+function renderBerichten(berichten){
+  const el=document.getElementById('feed-messages');
+  if(!berichten.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:14px">Nog geen berichten. Stuur het eerste bericht! 👋</div>';return;}
+
+  let html='';
+  let lastDate='';
+
+  berichten.forEach(b=>{
+    const d=fdt(b.aangemaakt_op);
+    if(d!==lastDate){html+=`<div class="date-divider"><span>${d}</span></div>`;lastDate=d;}
+
+    if(b.type==='systeem'||b.type==='deal'||b.type==='streak'){
+      const cls=b.type==='deal'?'win':b.type==='streak'?'streak':'';
+      html+=`<div class="sys-msg ${cls}">${b.bericht}</div>`;
+      return;
+    }
+
+    const isOwn=b.user_id===me.id;
+    const profiel=profielen.find(p=>p.id===b.user_id);
+    const naam=profiel?.naam||'Onbekend';
+    const initials=naam.slice(0,2).toUpperCase();
+    const avColors=['av-da','av-se','av-mi'];
+    const avIdx=profielen.findIndex(p=>p.id===b.user_id)%avColors.length;
+    const avCls=avColors[Math.max(0,avIdx)];
+
+    // Highlight @mentions
+    let tekst=b.bericht.replace(/@[\w\s]+/g,m=>`<span class="mention">${m}</span>`);
+
+    html+=`<div class="msg-group${isOwn?' own':''}">
+      <div class="avatar ${avCls}">${initials}</div>
+      <div class="bubble">
+        ${!isOwn?`<div class="bubble-name">${naam}</div>`:''}
+        <div class="bubble-text">${tekst}</div>
+        <div class="bubble-time">${ftm(b.aangemaakt_op)}</div>
+      </div>
+    </div>`;
+  });
+
+  el.innerHTML=html;
+  el.scrollTop=el.scrollHeight;
+}
+
+async function loadFeed(){
+  const berichten=await api('GET','/rest/v1/feed_berichten?order=aangemaakt_op.asc&limit=100')||[];
+  berichtenCache=berichten;
+  renderBerichten(berichten);
+}
+
+async function sendMessage(){
+  const input=document.getElementById('msg-input');
+  const tekst=input.value.trim();
+  if(!tekst)return;
+
+  // Detecteer mentions
+  const mentionMatches=tekst.match(/@(\w+)/g)||[];
+  const mentions=[];
+  mentionMatches.forEach(m=>{
+    const naam=m.slice(1).toLowerCase();
+    const p=profielen.find(x=>(x.naam||'').toLowerCase().startsWith(naam));
+    if(p)mentions.push(p.id);
+  });
+
+  try{
+    const body={user_id:me.id,bericht:tekst,type:'bericht',mentions:mentions.length?mentions:null};
+    await api('POST','/rest/v1/feed_berichten',body);
+    input.value='';input.style.height='auto';
+    await loadFeed();
+  }catch(e){toast('Fout: '+e.message,'err');}
+}
+
+function autoResize(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,120)+'px';
+}
+
+function checkMention(el){
+  const val=el.value;
+  const atIdx=val.lastIndexOf('@');
+  if(atIdx===-1){document.getElementById('mentions-popup').classList.remove('open');return;}
+  const query=val.slice(atIdx+1).toLowerCase();
+  const matches=profielen.filter(p=>(p.naam||'').toLowerCase().startsWith(query)&&p.id!==me.id);
+  if(!matches.length){document.getElementById('mentions-popup').classList.remove('open');return;}
+
+  const popup=document.getElementById('mentions-popup');
+  popup.innerHTML=matches.map(p=>{
+    const initials=(p.naam||'?').slice(0,2).toUpperCase();
+    return `<div class="mention-item" onclick="insertMention('${p.naam}')">
+      <div class="mention-av av-da">${initials}</div>
+      <div style="font-size:13px;font-weight:600">${p.naam||p.email}</div>
+    </div>`;
+  }).join('');
+  popup.classList.add('open');
+}
+
+function insertMention(naam){
+  const input=document.getElementById('msg-input');
+  const val=input.value;
+  const atIdx=val.lastIndexOf('@');
+  input.value=val.slice(0,atIdx)+'@'+naam+' ';
+  document.getElementById('mentions-popup').classList.remove('open');
+  input.focus();
+}
+
+// Realtime subscription
+function setupRealtime(){
+  try{
+    const s=getSession();
+    const ws=new WebSocket(`wss://bstpobqvodljhpjzgnkp.supabase.co/realtime/v1/websocket?apikey=${AK}&vsn=1.0.0`);
+    ws.onopen=()=>{
+      ws.send(JSON.stringify({topic:'realtime:public:feed_berichten',event:'phx_join',payload:{},ref:null}));
+    };
+    ws.onmessage=(e)=>{
+      const msg=JSON.parse(e.data);
+      if(msg.event==='INSERT'){loadFeed();}
+    };
+    ws.onerror=()=>{setTimeout(setupRealtime,5000);}; // herverbinden bij error
+    ws.onclose=()=>{setTimeout(setupRealtime,5000);};
+  }catch(e){
+    // Realtime niet beschikbaar, poll elke 15 seconden
+    setInterval(loadFeed,15000);
+  }
+}
+
+// Enter to send
+document.getElementById('msg-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+});
+
+async function init(){
+  me=await checkAuth();if(!me)return;
+  document.getElementById('topbar-user').textContent=me.naam||me.email;
+  profielen=await api('GET','/rest/v1/profielen')||[];
+  await loadFeed();
+  setupRealtime();
+}
+init();
+</script>
+</body>
+</html>

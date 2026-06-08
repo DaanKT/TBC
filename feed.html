@@ -129,11 +129,24 @@ select option{background:var(--surface2);color:var(--text)}
   <div class="topbar-logo">The Branding <span>Club</span></div>
   <div class="topbar-right">
     <span class="topbar-user" id="topbar-user"></span>
-    <button class="btn-lo" onclick="logout()">↩</button>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Dark/Light mode">🌙</button><button class="btn-lo" onclick="logout()">↩</button>
   </div>
 </div>
 
-<div class="content">
+<div class="desktop-sidebar" id="desktop-sidebar">
+  <div style="font-size:12px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)">The Branding <span style="color:#4FD1A5">Club</span></div>
+  <button class="ds-item" onclick="location.href='dashboard.html'"><span class="ds-ic">🏠</span>Dashboard</button>
+  <button class="ds-item" onclick="location.href='offertes.html'"><span class="ds-ic">📋</span>Pipeline</button>
+  <button class="ds-item on" onclick="location.href='feed.html'"><span class="ds-ic">💬</span>Feed <span class="ds-badge">2</span></button>
+  <button class="ds-item" onclick="location.href='taken.html'"><span class="ds-ic">✅</span>Taken</button>
+  <div class="ds-section">Operations</div>
+  <button class="ds-item" onclick="location.href='levertijden.html'"><span class="ds-ic">📦</span>Levertijden</button>
+  <button class="ds-item" onclick="location.href='klachten.html'"><span class="ds-ic">⚠️</span>Klachten</button>
+  <button class="ds-item" onclick="location.href='links.html'"><span class="ds-ic">🔗</span>Links</button>
+  <div class="ds-section">Admin</div>
+  <button class="ds-item" onclick="location.href='meer.html'"><span class="ds-ic">⚙️</span>Beheer</button>
+</div>
+<div class="content" style="margin-left:0">
   <div class="feed-messages" id="feed-messages">
     <div style="text-align:center;padding:2rem;color:var(--text2)"><span class="ld dk"></span><br><br>Feed laden...</div>
   </div>

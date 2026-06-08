@@ -341,7 +341,7 @@ async function init(){
 async function loadData(){
   if(isAdmin(me)){
     profielen=await api('GET','/rest/v1/profielen?rol=eq.gebruiker')||[];
-    taken=await api('GET','/rest/v1/taken?order=aangemaakt_op.desc&select=*,profielen!taken_user_id_fkey(naam,email),toegewezen_profiel:profielen!taken_toegewezen_aan_fkey(naam,email)')||[];
+    taken=await api('GET','/rest/v1/taken?order=aangemaakt_op.desc')||[];
   } else {
     taken=await api('GET','/rest/v1/taken?or=(user_id.eq.'+me.id+',toegewezen_aan.eq.'+me.id+')&order=aangemaakt_op.desc')||[];
   }

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Offertes — TBC</title>
+<link rel="apple-touch-icon" href="icon.svg"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="manifest" href="manifest.json"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0B1F3A;--navy-l:#1E3A5F;--teal:#4FD1A5;--teal-d:#3ab891;--bg:#f0f2f5;--card:#fff;--border:#e2e5ea;--text:#1a1f2e;--muted:#6b7280;--red:#dc2626;--amber:#d97706;--green:#16a34a;--blue:#2563eb;--r:10px;--rs:6px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px}
+.topbar{background:var(--navy);padding:0 1rem;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.topbar-logo{font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.06em}
+.topbar-logo span{color:var(--teal)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-user{font-size:12px;color:rgba(255,255,255,.5)}
+.btn-lo{font-family:'DM Sans',sans-serif;font-size:12px;background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.5);padding:4px 10px;border-radius:var(--rs);cursor:pointer}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:40;height:60px;overflow-x:auto;-webkit-overflow-scrolling:touch;justify-content:flex-start;padding:0 4px}
+.bottom-nav::-webkit-scrollbar{display:none}
+.bn-item{min-width:64px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:500;color:var(--muted);cursor:pointer;border:none;background:none;transition:color .15s;padding:0}
+.bn-item.active{color:var(--teal)}
+.bn-item .ic{font-size:20px;line-height:1}
+.content{padding:1rem;max-width:720px;margin:0 auto}
+button{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:var(--rs);border:1px solid var(--border);background:var(--card);color:var(--text);padding:7px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .12s}
+button:hover{background:#f0f2f5}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.teal{background:var(--teal);color:var(--navy);border-color:var(--teal);font-weight:600}
+button.teal:hover{background:var(--teal-d)}
+button.sm{font-size:12px;padding:5px 10px}
+button.danger{color:var(--red);border-color:#fecaca}
+button.danger:hover{background:#fef2f2}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:.75rem}
+.overlay{display:none;position:fixed;inset:0;background:rgba(11,31,58,.55);z-index:100;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--card);border-radius:var(--r) var(--r) 0 0;padding:20px;width:100%;max-width:600px;max-height:92vh;overflow-y:auto}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:99px;margin:0 auto 16px}
+.mt{font-size:16px;font-weight:700;margin-bottom:4px}
+.ms{font-size:13px;color:var(--muted);margin-bottom:16px}
+.field{margin-bottom:12px}
+label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+input[type=text],input[type=number],input[type=date],textarea,select{font-family:'DM Sans',sans-serif;font-size:15px;width:100%;border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;color:var(--text);background:var(--card);outline:none;-webkit-appearance:none}
+input:focus,textarea:focus,select:focus{border-color:var(--teal)}
+textarea{resize:vertical;min-height:70px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mf{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.tw{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:6px;width:90%;max-width:400px}
+.toast{background:var(--navy);color:#fff;font-size:13px;padding:10px 16px;border-radius:var(--rs);animation:tin .2s ease;text-align:center}
+.toast.err{background:var(--red)}.toast.ok{background:var(--green)}
+@keyframes tin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ld{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+.ld.dk{border-color:rgba(0,0,0,.1);border-top-color:var(--navy)}
+@keyframes sp{to{transform:rotate(360deg)}}
+.section-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:1rem 0 .5rem}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;white-space:nowrap}
+.b-verstuurd{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
+.b-follow_up{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.b-gewonnen{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.b-verloren{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted);font-size:14px}
+.stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.25rem}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.sv{font-size:20px;font-weight:700;line-height:1.1}
+.sl{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
+.ss{font-size:12px;color:var(--muted);margin-top:3px}
+.cn{color:var(--navy)}.cg{color:var(--green)}.ca{color:var(--amber)}.cr{color:var(--red)}
+.tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.tag{font-size:12px;padding:5px 12px;border-radius:99px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-weight:500}
+.tag.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.offerte-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:.75rem;position:relative}
+.offerte-card.follow-up-laat{border-left:3px solid var(--amber)}
+.offerte-card.verloren{opacity:.65}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-logo">The Branding <span>Club</span></div>
+  <div class="topbar-right"><span class="topbar-user" id="topbar-user"></span><button class="btn-lo" onclick="logout()">↩</button></div>
+</div>
+<div class="content" id="content"><div class="empty"><span class="ld dk"></span><br><br>Laden...</div></div>
+<nav class="bottom-nav">
+  <button class="bn-item" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
+  <button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
+  <button class="bn-item" onclick="location.href='levertijden.html'"><span class="ic">📦</span><span>Levertijd</span></button>
+  <button class="bn-item" onclick="location.href='klachten.html'"><span class="ic">⚠️</span><span>Klachten</span></button>
+  <button class="bn-item active" onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
+</nav>
+<div class="tw" id="tw"></div>
+
+<!-- Offerte modal -->
+<div class="overlay" id="ov-offerte" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal"><div class="modal-handle"></div>
+<div class="mt" id="om-title">Offerte toevoegen</div>
+<div class="ms">Vul de gegevens in van de verstuurde offerte</div>
+<input type="hidden" id="om-id"/>
+<div class="r2">
+  <div class="field"><label>Bedrijfsnaam *</label><input type="text" id="om-bedrijf" placeholder="Bedrijf BV"/></div>
+  <div class="field"><label>Contactpersoon</label><input type="text" id="om-contact" placeholder="Jan de Vries"/></div>
+</div>
+<div class="r2">
+  <div class="field"><label>Offerte nummer</label><input type="text" id="om-nummer" placeholder="2026-0142"/></div>
+  <div class="field"><label>Bedrag (€) *</label><input type="number" id="om-bedrag" placeholder="2500" min="0" step="100"/></div>
+</div>
+<div class="r2">
+  <div class="field"><label>Datum verstuurd *</label><input type="date" id="om-datum"/></div>
+  <div class="field"><label>Volgende actie</label><input type="date" id="om-actie"/></div>
+</div>
+<div class="field"><label>Status</label>
+  <select id="om-status">
+    <option value="verstuurd">📤 Verstuurd</option>
+    <option value="follow_up">🔁 Follow-up</option>
+    <option value="gewonnen">✅ Gewonnen</option>
+    <option value="verloren">❌ Verloren</option>
+  </select>
+</div>
+<div class="field"><label>Notitie</label><textarea id="om-notitie" placeholder="Bijv. klant twijfelt over aantal, belt terug na 10 juni..."></textarea></div>
+<div class="field"><label>Offerte PDF uploaden</label>
+  <input type="file" id="om-pdf" accept=".pdf" style="font-size:14px;padding:8px 0"/>
+  <div id="om-pdf-huidig" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
+</div>
+<div class="mf">
+  <button onclick="document.getElementById('ov-offerte').classList.remove('open')">Annuleren</button>
+  <button id="om-del" class="danger" onclick="deleteOfferte()" style="display:none">Verwijderen</button>
+  <button class="teal" id="btn-om-s" onclick="saveOfferte()">Opslaan</button>
+</div>
+</div></div>
+
+<script>
+const SB='https://bstpobqvodljhpjzgnkp.supabase.co';
+const AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDUzMTI4MCwiZXhwIjoyMDk2MTA3MjgwfQ.2Nrgk7-TxZ-gIAFYhjcfNTFdm6g-6HaGIu3QGCEckPs';
+
+function getSession(){try{return JSON.parse(localStorage.getItem('tbc_session'));}catch(e){return null;}}
+function getMe(){try{return JSON.parse(localStorage.getItem('tbc_me'));}catch(e){return null;}}
+function logout(){localStorage.removeItem('tbc_session');localStorage.removeItem('tbc_me');location.href='login.html';}
+function hdr(svc=false){const s=getSession();const t=svc?SK:(s?s.access_token:'');return{'apikey':AK,'Authorization':'Bearer '+t,'Content-Type':'application/json','Prefer':'return=representation'};}
+async function api(m,p,b,svc=false){const r=await fetch(SB+p,{method:m,headers:hdr(svc),body:b?JSON.stringify(b):undefined});const t=await r.text();if(!r.ok)throw new Error(t);return t?JSON.parse(t):null;}
+function eur(n){return'€'+Number(n||0).toLocaleString('nl-NL',{minimumFractionDigits:0,maximumFractionDigits:0});}
+function fdt(d){if(!d)return'—';return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',month:'short',year:'numeric'});}
+function nowD(){return new Date().toISOString().slice(0,10);}
+function toast(msg,tp=''){const el=document.createElement('div');el.className='toast'+(tp?' '+tp:'');el.textContent=msg;let tw=document.getElementById('tw');tw.appendChild(el);setTimeout(()=>el.remove(),3500);}
+function isAdmin(me){return me&&me.rol==='admin';}
+
+let me=null, offertes=[], profielen=[], activeFilter='all', editId=null;
+
+async function checkAuth(){
+  const s=getSession();
+  if(!s||!s.access_token){localStorage.clear();location.replace('login.html');return null;}
+  let m=getMe();
+  if(m&&m.id)return m;
+  try{
+    const p=await api('GET','/rest/v1/profielen?id=eq.'+s.user.id);
+    if(!p||!p.length)throw new Error();
+    localStorage.setItem('tbc_me',JSON.stringify(p[0]));return p[0];
+  }catch(e){localStorage.clear();location.replace('login.html');return null;}
+}
+
+async function init(){
+  me=await checkAuth();if(!me)return;
+  document.getElementById('topbar-user').textContent=me.naam||me.email;
+  await loadData();
+  render();
+}
+
+async function loadData(){
+  if(isAdmin(me)){
+    offertes=await api('GET','/rest/v1/offertes?order=datum_verstuurd.desc&select=*,profielen(naam,email)')||[];
+    profielen=await api('GET','/rest/v1/profielen?rol=eq.gebruiker')||[];
+  } else {
+    offertes=await api('GET','/rest/v1/offertes?user_id=eq.'+me.id+'&order=datum_verstuurd.desc')||[];
+  }
+}
+
+function dagsDiff(datum){
+  if(!datum)return null;
+  return Math.floor((new Date()-new Date(datum))/(1000*60*60*24));
+}
+
+function render(){
+  const filtered=activeFilter==='all'?offertes:offertes.filter(o=>o.status===activeFilter);
+
+  // Stats
+  const open=offertes.filter(o=>o.status!=='gewonnen'&&o.status!=='verloren');
+  const gewonnen=offertes.filter(o=>o.status==='gewonnen');
+  const pipelineBedrag=open.reduce((s,o)=>s+(o.bedrag||0),0);
+  const gewonnenBedrag=gewonnen.reduce((s,o)=>s+(o.bedrag||0),0);
+  const followUpNodig=open.filter(o=>o.volgende_actie&&o.volgende_actie<=nowD()).length;
+
+  let h=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div><div style="font-size:18px;font-weight:700">Offertes</div><div style="font-size:12px;color:var(--muted)">${offertes.length} totaal</div></div>
+    <button class="teal sm" onclick="openModal()">+ Nieuwe offerte</button>
+  </div>`;
+
+  h+=`<div class="stats-row">
+    <div class="stat"><div class="sv cn">${eur(pipelineBedrag)}</div><div class="sl">Open pipeline</div><div class="ss">${open.length} offertes</div></div>
+    <div class="stat"><div class="sv cg">${eur(gewonnenBedrag)}</div><div class="sl">Gewonnen</div><div class="ss">${gewonnen.length} offertes</div></div>
+  </div>`;
+
+  if(followUpNodig>0){
+    h+=`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r);padding:10px 14px;margin-bottom:1rem;font-size:13px;color:#92400e">
+      ⚠️ <strong>${followUpNodig} offerte${followUpNodig>1?'s':''}</strong> wacht${followUpNodig===1?'':'en'} op follow-up actie
+    </div>`;
+  }
+
+  // Filter tabs
+  h+=`<div class="tag-row">
+    <span class="tag${activeFilter==='all'?' active':''}" onclick="activeFilter='all';render()">Alles (${offertes.length})</span>
+    <span class="tag${activeFilter==='verstuurd'?' active':''}" onclick="activeFilter='verstuurd';render()">📤 Verstuurd (${offertes.filter(o=>o.status==='verstuurd').length})</span>
+    <span class="tag${activeFilter==='follow_up'?' active':''}" onclick="activeFilter='follow_up';render()">🔁 Follow-up (${offertes.filter(o=>o.status==='follow_up').length})</span>
+    <span class="tag${activeFilter==='gewonnen'?' active':''}" onclick="activeFilter='gewonnen';render()">✅ Gewonnen (${offertes.filter(o=>o.status==='gewonnen').length})</span>
+    <span class="tag${activeFilter==='verloren'?' active':''}" onclick="activeFilter='verloren';render()">❌ Verloren (${offertes.filter(o=>o.status==='verloren').length})</span>
+  </div>`;
+
+  if(!filtered.length){
+    h+=`<div class="empty">Geen offertes${activeFilter!=='all'?' in deze categorie':''}.<br><br><button class="teal" onclick="openModal()">+ Eerste offerte toevoegen</button></div>`;
+  } else {
+    filtered.forEach(o=>{
+      const dagen=dagsDiff(o.datum_verstuurd);
+      const actieLaat=o.volgende_actie&&o.volgende_actie<=nowD()&&o.status!=='gewonnen'&&o.status!=='verloren';
+      const statusLabels={'verstuurd':'📤 Verstuurd','follow_up':'🔁 Follow-up','gewonnen':'✅ Gewonnen','verloren':'❌ Verloren'};
+      const eigenaar=isAdmin(me)&&o.profielen?` · ${o.profielen.naam||o.profielen.email}`:'';
+
+      h+=`<div class="offerte-card${actieLaat?' follow-up-laat':''}${o.status==='verloren'?' verloren':''}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:700">${o.bedrijfsnaam}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">
+              ${o.contactpersoon||''}${o.offerte_nummer?' · #'+o.offerte_nummer:''}${eigenaar}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:16px;font-weight:700">${eur(o.bedrag)}</div>
+            <div style="font-size:11px;color:var(--muted)">${fdt(o.datum_verstuurd)}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:6px">
+          <span class="badge b-${o.status}">${statusLabels[o.status]||o.status}</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            ${o.volgende_actie?`<span style="font-size:11px;color:${actieLaat?'var(--amber)':'var(--muted)'}">📅 ${fdt(o.volgende_actie)}</span>`:''}
+            ${o.pdf_url?`<button class="sm" onclick="window.open('${o.pdf_url}','_blank')" style="font-size:11px;padding:3px 8px">📄 PDF</button>`:''}
+            <button class="sm" onclick="openModal(${o.id})" style="font-size:11px;padding:3px 8px">✏️ Bewerk</button>
+          </div>
+        </div>
+        ${o.notitie?`<div style="margin-top:8px;font-size:12px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);padding-top:8px">💬 ${o.notitie}</div>`:''}
+        ${actieLaat?`<div style="margin-top:6px;font-size:12px;color:var(--amber);font-weight:600">⚠️ Follow-up actie was ${fdt(o.volgende_actie)}</div>`:''}
+      </div>`;
+    });
+  }
+
+  document.getElementById('content').innerHTML=h;
+}
+
+function openModal(id=null){
+  editId=id;
+  document.getElementById('om-title').textContent=id?'Offerte bewerken':'Offerte toevoegen';
+  document.getElementById('om-del').style.display=id?'inline-flex':'none';
+  document.getElementById('om-pdf-huidig').textContent='';
+
+  if(id){
+    const o=offertes.find(x=>x.id===id);
+    if(!o)return;
+    document.getElementById('om-id').value=o.id;
+    document.getElementById('om-bedrijf').value=o.bedrijfsnaam||'';
+    document.getElementById('om-contact').value=o.contactpersoon||'';
+    document.getElementById('om-nummer').value=o.offerte_nummer||'';
+    document.getElementById('om-bedrag').value=o.bedrag||'';
+    document.getElementById('om-datum').value=o.datum_verstuurd||nowD();
+    document.getElementById('om-actie').value=o.volgende_actie||'';
+    document.getElementById('om-status').value=o.status||'verstuurd';
+    document.getElementById('om-notitie').value=o.notitie||'';
+    if(o.pdf_url) document.getElementById('om-pdf-huidig').textContent='Huidig: '+o.pdf_url.split('/').pop();
+  } else {
+    document.getElementById('om-id').value='';
+    document.getElementById('om-bedrijf').value='';
+    document.getElementById('om-contact').value='';
+    document.getElementById('om-nummer').value='';
+    document.getElementById('om-bedrag').value='';
+    document.getElementById('om-datum').value=nowD();
+    document.getElementById('om-actie').value='';
+    document.getElementById('om-status').value='verstuurd';
+    document.getElementById('om-notitie').value='';
+  }
+  document.getElementById('om-pdf').value='';
+  document.getElementById('ov-offerte').classList.add('open');
+}
+
+async function uploadPDF(file, offerteNummer){
+  if(!file)return null;
+  const s=getSession();
+  const ext=file.name.split('.').pop();
+  const path=`${me.id}/${offerteNummer||Date.now()}.${ext}`;
+  const r=await fetch(`${SB}/storage/v1/object/offertes/${path}`,{
+    method:'POST',
+    headers:{'apikey':AK,'Authorization':'Bearer '+s.access_token,'Content-Type':file.type,'x-upsert':'true'},
+    body:file
+  });
+  if(!r.ok){
+    const err=await r.text();
+    // Storage bucket bestaat mogelijk niet — sla URL op als null
+    console.warn('PDF upload mislukt:', err);
+    return null;
+  }
+  return `${SB}/storage/v1/object/public/offertes/${path}`;
+}
+
+async function saveOfferte(){
+  const bedrijf=document.getElementById('om-bedrijf').value.trim();
+  const bedrag=parseFloat(document.getElementById('om-bedrag').value);
+  const datum=document.getElementById('om-datum').value;
+  if(!bedrijf){toast('Vul bedrijfsnaam in.','err');return;}
+  if(isNaN(bedrag)){toast('Vul een bedrag in.','err');return;}
+  if(!datum){toast('Vul een datum in.','err');return;}
+
+  const btn=document.getElementById('btn-om-s');
+  btn.disabled=true;btn.innerHTML='<span class="ld"></span>';
+
+  try{
+    const pdfFile=document.getElementById('om-pdf').files[0];
+    const nummer=document.getElementById('om-nummer').value.trim();
+    let pdfUrl=null;
+
+    if(pdfFile){
+      pdfUrl=await uploadPDF(pdfFile, nummer||bedrijf.replace(/\s+/g,'-').toLowerCase());
+    }
+
+    const body={
+      bedrijfsnaam:bedrijf,
+      contactpersoon:document.getElementById('om-contact').value.trim()||null,
+      offerte_nummer:nummer||null,
+      bedrag,
+      datum_verstuurd:datum,
+      volgende_actie:document.getElementById('om-actie').value||null,
+      status:document.getElementById('om-status').value,
+      notitie:document.getElementById('om-notitie').value.trim()||null,
+      bijgewerkt_op:new Date().toISOString()
+    };
+
+    if(pdfUrl) body.pdf_url=pdfUrl;
+
+    const id=document.getElementById('om-id').value;
+    if(id){
+      await api('PATCH','/rest/v1/offertes?id=eq.'+id,body);
+      toast('Offerte bijgewerkt.','ok');
+    } else {
+      body.user_id=me.id;
+      body.regio_id=me.regio_id||null;
+      await api('POST','/rest/v1/offertes',body);
+      toast('Offerte toegevoegd! ✅','ok');
+    }
+
+    document.getElementById('ov-offerte').classList.remove('open');
+    await loadData();render();
+  }catch(e){
+    toast('Fout: '+e.message,'err');
+  }finally{
+    btn.disabled=false;btn.innerHTML='Opslaan';
+  }
+}
+
+async function deleteOfferte(){
+  const id=document.getElementById('om-id').value;
+  if(!id)return;
+  if(!confirm('Offerte verwijderen?'))return;
+  try{
+    await api('DELETE','/rest/v1/offertes?id=eq.'+id);
+    document.getElementById('ov-offerte').classList.remove('open');
+    await loadData();render();toast('Offerte verwijderd.','ok');
+  }catch(e){toast('Fout: '+e.message,'err');}
+}
+
+init();
+</script>
+</body>
+</html>

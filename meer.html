@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <!-- v6 --><title>Meer — TBC</title>
+<script>
+
+function initTheme(){const t=localStorage.getItem('tbc_theme')||'dark';document.documentElement.setAttribute('data-theme',t);updateThemeBtn(t);}
+function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme')||'dark';const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('tbc_theme',next);updateThemeBtn(next);}
+function updateThemeBtn(t){const btn=document.getElementById('theme-btn');if(btn)btn.textContent=t==='dark'?'☀️':'🌙';}
+(function(){var t=localStorage.getItem('tbc_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="apple-touch-icon" href="icon.svg"/>
 <link rel="icon" type="image/svg+xml" href="icon.svg"/>

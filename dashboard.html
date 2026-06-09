@@ -8,6 +8,14 @@
 <title>Dashboard — TBC</title>
 <link rel="apple-touch-icon" href="icon.svg"/>
 <link rel="icon" type="image/svg+xml" href="icon.svg"/>
+<script>
+
+function initTheme(){const t=localStorage.getItem('tbc_theme')||'dark';document.documentElement.setAttribute('data-theme',t);updateThemeBtn(t);}
+function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme')||'dark';const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('tbc_theme',next);updateThemeBtn(next);}
+function updateThemeBtn(t){const btn=document.getElementById('theme-btn');if(btn)btn.textContent=t==='dark'?'☀️':'🌙';}
+// Zet theme VOOR CSS laadt om flash of wrong theme te voorkomen
+(function(){var t=localStorage.getItem('tbc_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="manifest" href="manifest.json"/>
 <style>
@@ -238,11 +246,6 @@ select option{background:var(--surface2);color:var(--text)}
 </div></div>
 
 <script>
-
-function initTheme(){const t=localStorage.getItem('tbc_theme')||'dark';document.documentElement.setAttribute('data-theme',t);updateThemeBtn(t);}
-function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme')||'dark';const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('tbc_theme',next);updateThemeBtn(next);}
-function updateThemeBtn(t){const btn=document.getElementById('theme-btn');if(btn)btn.textContent=t==='dark'?'☀️':'🌙';}
-initTheme();
 
 const SB='https://bstpobqvodljhpjzgnkp.supabase.co';
 const AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
@@ -811,6 +814,7 @@ function closeTour(){
 function fdt(d){return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',month:'short',year:'numeric'});}
 
 init();
+initTheme();
 </script>
 </body>
 </html>

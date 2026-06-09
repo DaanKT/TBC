@@ -364,6 +364,7 @@ function gWd(y,m){const d=new Date(y,m,0).getDate();let w=0;for(let i=1;i<=d;i++
 function gWdN(y,m,dag){let w=0;for(let i=1;i<=dag;i++)if(new Date(y,m-1,i).getDay()%6)w++;return w;}
 function gWdR(y,m,dag){const tot=new Date(y,m,0).getDate();let w=0;for(let i=dag+1;i<=tot;i++)if(new Date(y,m-1,i).getDay()%6)w++;return w;}
 function gYest(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
+function getNextWorkday(ds){const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+1);while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);}
 // Tour
 const TOUR=[
   {t:'Welkom bij TBC! \uD83D\uDC4B',b:'Korte rondleiding. ? knop herstart hem.',sel:null},
@@ -413,17 +414,18 @@ async function init() {
 
 async function loadAll() {
   const m = nowM();
+  const _d35=new Date();_d35.setDate(_d35.getDate()-35);const d35s=_d35.toISOString().slice(0,10);
   regios = await api('GET','/rest/v1/regios?order=naam.asc') || [];
   targets = await api('GET','/rest/v1/targets?order=periode.desc') || [];
   if (isRA(me)) {
     profielen = await api('GET','/rest/v1/profielen') || [];
     adminRegios = isAdmin(me) ? regios.map(r=>({regio_id:r.id})) : (await api('GET','/rest/v1/admin_regios?user_id=eq.'+me.id) || []);
-    commits = await api('GET','/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc') || [];
+    commits = await api('GET','/rest/v1/commitments?datum=gte.'+d35s+'&order=datum.desc') || [];
     dagrapporten = await api('GET','/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc') || [];
     correcties = await api('GET','/rest/v1/correcties?datum=gte.'+m+'-01&order=aangemaakt_op.desc') || [];
   } else {
     if (me.regio_id) profielen = await api('GET','/rest/v1/profielen?regio_id=eq.'+me.regio_id+'&rol=eq.gebruiker') || [];
-    commits = await api('GET','/rest/v1/commitments?datum=gte.'+m+'-01&order=datum.desc&user_id=eq.'+me.id) || [];
+    commits = await api('GET','/rest/v1/commitments?datum=gte.'+d35s+'&order=datum.desc&user_id=eq.'+me.id) || [];
     dagrapporten = await api('GET','/rest/v1/dagrapporten?datum=gte.'+m+'-01&order=datum.desc&user_id=eq.'+me.id) || [];
     correcties = await api('GET','/rest/v1/correcties?datum=gte.'+m+'-01&user_id=eq.'+me.id) || [];
   }
@@ -582,11 +584,14 @@ function renderMed() {
   }
 
   // CHECK-IN
+  const ciBlocked = !!(yestC && !todayD);
   const vCommit = yestD?.commit_morgen||null;
-  h += `<div class="section-label">Dagelijkse check-in${todayD?' ✓':''}</div>
-  <div style="background:var(--surface2);border-radius:var(--r);padding:16px;margin-bottom:1rem;border:1px solid var(--border2)">
-    ${vCommit?`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:10px 12px;background:var(--tealfade);border-radius:var(--rs);border:1px solid rgba(79,209,165,.15)"><div><div style="font-size:10px;color:var(--teal);text-transform:uppercase;font-weight:700;letter-spacing:.05em">Commit vandaag</div><div style="font-size:16px;font-weight:800;color:var(--teal)">${eur(vCommit)}</div></div><div style="font-size:20px">🎯</div></div>`:''}
-    ${yestD?`<div style="background:rgba(255,255,255,.04);border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:.05em;margin-bottom:3px">Gisteren</div><div style="font-size:13px;color:var(--text2)">Productie: <strong>${eur(yestD.productie_vandaag)}</strong> · Commit morgen: <strong style="color:var(--teal)">${eur(yestD.commit_morgen)}</strong></div>${yestD.notitie?`<div style="font-size:12px;color:var(--text3);margin-top:4px;font-style:italic">Plan: ${yestD.notitie}</div>`:''}</div>`:''}
+  const todayCommit = commits.find(c=>c.user_id===me.id&&c.datum===today&&!c.bevestigd);
+  h += `<div class="section-label">Dagelijkse check-in${todayD?' ✓':ciBlocked?' 🔒':''}</div>`;
+  if (ciBlocked) h += `<div style="background:var(--redfade);border:1px solid rgba(240,79,94,.3);border-radius:var(--r);padding:14px 16px;margin-bottom:.75rem;display:flex;align-items:center;gap:12px"><div style="font-size:24px;flex-shrink:0">🔒</div><div><div style="font-size:13px;font-weight:700;color:var(--red)">Check-in geblokkeerd</div><div style="font-size:12px;color:var(--text2);margin-top:3px">Bevestig eerst je commitment van gisteren (hierboven) om te kunnen inchecken.</div></div></div>`;
+  h += `<div style="background:var(--surface2);border-radius:var(--r);padding:16px;margin-bottom:1rem;border:1px solid ${ciBlocked?'rgba(240,79,94,.15)':'var(--border2)'};${ciBlocked?'opacity:.45;pointer-events:none':''}">
+    ${(todayCommit||vCommit)?`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:10px 12px;background:var(--tealfade);border-radius:var(--rs);border:1px solid rgba(79,209,165,.15)"><div><div style="font-size:10px;color:var(--teal);text-transform:uppercase;font-weight:700;letter-spacing:.05em">🎯 Commit vandaag</div><div style="font-size:16px;font-weight:800;color:var(--teal)">${eur(todayCommit?todayCommit.omzet_forecast:vCommit)}</div></div>${ciBlocked?`<div style="font-size:11px;color:var(--text3)">Bevestig hierboven</div>`:`<div style="font-size:20px">🎯</div>`}</div>`:''}
+    ${yestD?`<div style="background:rgba(255,255,255,.04);border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:.05em;margin-bottom:3px">Gisteren</div><div style="font-size:13px;color:var(--text2)">Productie: <strong>${eur(yestD.productie_vandaag)}</strong> · Commit: <strong style="color:var(--teal)">${eur(yestD.commit_morgen)}</strong></div>${yestD.notitie?`<div style="font-size:12px;color:var(--text3);margin-top:4px;font-style:italic">Plan: ${yestD.notitie}</div>`:''}</div>`:''}
     <div style="margin-bottom:10px">
       <span class="ci-lbl">Hoe voel je je vandaag?</span>
       <div class="hmr-row">${['😫','😕','😐','🙂','🔥'].map((e,i)=>`<button class="hmr-btn${todayD&&todayD.humeur===(i+1)?' on':''}" onclick="selH(${i+1})">${e}</button>`).join('')}</div>
@@ -595,9 +600,10 @@ function renderMed() {
       <span class="ci-lbl">Productie intake vandaag (€)</span>
       <input class="ci-in" type="number" id="ci-pv" value="${todayD?todayD.productie_vandaag:''}" placeholder="0" min="0" step="100"/>
     </div>
-    <div style="margin-bottom:10px">
-      <span class="ci-lbl">Commit voor morgen (€)</span>
-      <input class="ci-in" type="number" id="ci-cm" value="${todayD?todayD.commit_morgen:''}" placeholder="0" min="0" step="100"/>
+    <div style="margin-bottom:12px;background:var(--tealfade);border-radius:var(--rs);padding:12px;border:1px solid rgba(79,209,165,.2)">
+      <span class="ci-lbl" style="color:var(--teal)">🎯 Commit voor morgen (€) <span style="color:var(--red)">*</span></span>
+      <input class="ci-in" type="number" id="ci-cm" value="${todayD?todayD.commit_morgen:''}" placeholder="Verplicht!" min="0" step="100" style="border-color:rgba(79,209,165,.4);background:var(--surface3)"/>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Verplicht — je kunt niet inchecken zonder commit voor morgen.</div>
     </div>
     <div style="margin-bottom:10px">
       <span class="ci-lbl">Top 3 acties voor morgen</span>
@@ -624,6 +630,7 @@ async function saveCI(verplicht) {
   const cm = parseFloat(document.getElementById('ci-cm').value)||0;
   const n = document.getElementById('ci-n').value.trim();
   const top3 = document.getElementById('ci-top3').value.trim();
+  if (!cm || cm <= 0) { toast('Commit voor morgen is verplicht — vul een bedrag in.','err'); document.getElementById('ci-cm').focus(); return; }
   if (verplicht&&!n) { toast('Vul in hoe je dit gaat fixen.','err'); return; }
   const today = nowD();
   const existing = dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
@@ -631,6 +638,12 @@ async function saveCI(verplicht) {
     const body = {productie_vandaag:pv,commit_morgen:cm,notitie:n||null,top3_acties:top3||null,humeur:selH||null,user_id:me.id,datum:today};
     if (existing) await api('PATCH','/rest/v1/dagrapporten?id=eq.'+existing.id,body);
     else await api('POST','/rest/v1/dagrapporten',body);
+    const nextDay = getNextWorkday(today);
+    const existingC = commits.find(c=>c.user_id===me.id&&c.datum===nextDay&&!c.bevestigd);
+    try {
+      if (existingC) await api('PATCH','/rest/v1/commitments?id=eq.'+existingC.id,{omzet_forecast:cm});
+      else await api('POST','/rest/v1/commitments',{user_id:me.id,regio_id:me.regio_id||null,datum:nextDay,omzet_forecast:cm});
+    } catch {}
     try { await api('POST','/rest/v1/feed_berichten',{user_id:me.id,bericht:`📋 ${me.naam} heeft ingecheckt · Productie: ${eur(pv)} · Commit morgen: ${eur(cm)}`,type:'systeem'}); } catch {}
     await loadAll(); renderMed(); toast('Check-in opgeslagen! ✅','ok');
   } catch(e) { toast('Fout: '+e.message,'err'); }

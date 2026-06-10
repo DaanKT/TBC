@@ -392,7 +392,7 @@ async function init() {
     if (!me) return;
     document.getElementById('topbar-user').textContent = (me.naam||me.email) + (isAdmin(me)?' (Admin)':'');
     if (isRA(me)) {
-      document.getElementById('tbr').innerHTML = '<button class="primary sm" onclick="openNM('all',null)">🔔 Melding</button>';
+      document.getElementById('tbr').innerHTML = `<button class="primary sm" onclick="openNM('all',null)">🔔 Melding</button>`;
     }
     await loadAll();
     if (isRA(me)) renderAdmin(); else renderMed();

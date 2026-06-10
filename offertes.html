@@ -242,7 +242,6 @@ select option{background:var(--surface2);color:var(--text)}
 </div>
 <div class="r2">
   <div class="field"><label>Datum verstuurd *</label><input type="date" id="om-datum"/></div>
-  <div class="field"><label>Volgende actie</label><input type="date" id="om-actie"/></div>
 </div>
 <div class="field"><label>Status</label>
   <select id="om-status">
@@ -364,7 +363,7 @@ function render(){
           <div style="flex:1">
             <div style="font-size:15px;font-weight:700">${o.bedrijfsnaam}</div>
             <div style="font-size:12px;color:var(--muted);margin-top:2px">
-              ${o.contactpersoon||''}${o.offerte_nummer?' · #'+o.offerte_nummer:''}${eigenaar}
+              ${o.contactpersoon||''}${o.offerte_nr?' · #'+o.offerte_nr:''}${eigenaar}
             </div>
           </div>
           <div style="text-align:right;flex-shrink:0">
@@ -401,10 +400,9 @@ function openModal(id=null){
     document.getElementById('om-id').value=o.id;
     document.getElementById('om-bedrijf').value=o.bedrijfsnaam||'';
     document.getElementById('om-contact').value=o.contactpersoon||'';
-    document.getElementById('om-nummer').value=o.offerte_nummer||'';
+    document.getElementById('om-nummer').value=o.offerte_nr||'';
     document.getElementById('om-bedrag').value=o.bedrag||'';
     document.getElementById('om-datum').value=o.datum_verstuurd||nowD();
-    document.getElementById('om-actie').value=o.volgende_actie||'';
     document.getElementById('om-status').value=o.status||'verstuurd';
     document.getElementById('om-notitie').value=o.notitie||'';
     if(o.pdf_url) document.getElementById('om-pdf-huidig').textContent='Huidig: '+o.pdf_url.split('/').pop();
@@ -415,7 +413,6 @@ function openModal(id=null){
     document.getElementById('om-nummer').value='';
     document.getElementById('om-bedrag').value='';
     document.getElementById('om-datum').value=nowD();
-    document.getElementById('om-actie').value='';
     document.getElementById('om-status').value='verstuurd';
     document.getElementById('om-notitie').value='';
   }
@@ -467,16 +464,13 @@ async function saveOfferte(){
     const body={
       bedrijfsnaam:bedrijf,
       contactpersoon:document.getElementById('om-contact').value.trim()||null,
-      offerte_nummer:nummer||null,
+      offerte_nr:nummer||null,
       bedrag,
       datum_verstuurd:datum,
-      volgende_actie:document.getElementById('om-actie').value||null,
       status:document.getElementById('om-status').value,
       notitie:document.getElementById('om-notitie').value.trim()||null,
       bijgewerkt_op:new Date().toISOString()
     };
-
-    if(pdfUrl) body.pdf_url=pdfUrl;
 
     const id=document.getElementById('om-id').value;
     if(id){

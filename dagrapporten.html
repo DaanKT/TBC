@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="nl" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
@@ -114,13 +114,7 @@ textarea{resize:vertical;min-height:80px}
   <div class="topbar-right"><span class="topbar-user" id="topbar-user"></span><button class="btn-lo" onclick="logout()">↩</button></div>
 </div>
 <div class="content" id="content"><div class="empty"><span class="ld dk"></span><br><br>Laden...</div></div>
-<nav class="bottom-nav">
-  <button class="bn-item" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span></button>
-  <button class="bn-item" onclick="location.href='offertes.html'"><span class="ic">📋</span><span>Offertes</span></button>
-  <button class="bn-item" onclick="location.href='feed.html'"><span class="ic">💬</span><span>Feed</span></button>
-  <button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span></button>
-  <button class="bn-item" onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span></button>
-</nav>
+<nav class="bottom-nav"><button class="bn-item active" onclick="location.href='dashboard.html'"><span class="ic">🏠</span><span>Home</span><span class="bn-dot"></span></button><button class="bn-item" onclick="location.href='offertes.html'"><span class="ic">📋</span><span>Offertes</span><span class="bn-dot"></span></button><button class="bn-item" onclick="location.href='feed.html'"><span class="ic">💬</span><span>Feed</span><span class="bn-dot"></span></button><button class="bn-item" onclick="location.href='taken.html'"><span class="ic">✅</span><span>Taken</span><span class="bn-dot"></span></button><button class="bn-item" onclick="location.href='meer.html'"><span class="ic">⋯</span><span>Meer</span><span class="bn-dot"></span></button></nav>
 <div class="tw" id="tw"></div>
 
 <div class="overlay" id="ov-dag" onclick="if(event.target===this)this.classList.remove('open')">

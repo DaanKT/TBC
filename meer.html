@@ -234,7 +234,7 @@ select option{background:var(--surface2);color:var(--text)}
 <div id="um-p-wrap" class="field"><label>Wachtwoord *</label><input type="password" id="um-p" placeholder="minimaal 6 tekens"/></div>
 <div class="field"><label>Rol</label><select id="um-rol"><option value="gebruiker">Gebruiker</option><option value="regio_admin">Regio admin</option><option value="admin">Super admin</option></select></div>
 <div class="field"><label>Regio</label><select id="um-r"><option value="">— Geen —</option></select></div>
-<div class="mf"><button onclick="document.getElementById('ov-um').classList.remove('open')">Annuleren</button><button class="teal" id="btn-um-s" onclick="saveUser()">Opslaan</button></div>
+<div class="mf"><button onclick="document.getElementById('ov-um').classList.remove('open')">Annuleren</button><button class="primary" id="btn-um-s" onclick="saveUser()">Opslaan</button></div>
 </div></div>
 
 <!-- Regio modal -->
@@ -242,7 +242,7 @@ select option{background:var(--surface2);color:var(--text)}
 <div class="modal"><div class="modal-handle"></div>
 <div class="mt">Regio</div>
 <div class="field"><label>Naam *</label><input type="text" id="rg-n" placeholder="bijv. Noord-Holland"/></div>
-<div class="mf"><button onclick="document.getElementById('ov-rg').classList.remove('open')">Annuleren</button><button class="teal" id="btn-rg-s" onclick="saveRegio()">Opslaan</button></div>
+<div class="mf"><button onclick="document.getElementById('ov-rg').classList.remove('open')">Annuleren</button><button class="primary" id="btn-rg-s" onclick="saveRegio()">Opslaan</button></div>
 </div></div>
 
 <!-- Target modal -->
@@ -254,7 +254,7 @@ select option{background:var(--surface2);color:var(--text)}
 <div class="field" id="tg-uw" style="display:none"><label>Persoon</label><select id="tg-u"></select></div>
 <div class="field"><label>Periode</label><input type="month" id="tg-p"/></div>
 <div class="field"><label>Target (€) *</label><input type="number" id="tg-o" placeholder="50000" min="0" step="1000"/></div>
-<div class="mf"><button onclick="document.getElementById('ov-tg').classList.remove('open')">Annuleren</button><button class="teal" id="btn-tg-s" onclick="saveTarget()">Opslaan</button></div>
+<div class="mf"><button onclick="document.getElementById('ov-tg').classList.remove('open')">Annuleren</button><button class="primary" id="btn-tg-s" onclick="saveTarget()">Opslaan</button></div>
 </div></div>
 
 <script>
@@ -478,7 +478,7 @@ function renderKPI(isA){
 }
 
 function renderGebruikers(){
-  let h=`<div style="display:flex;justify-content:flex-end;margin-bottom:.75rem"><button class="teal sm" onclick="openUM()">+ Gebruiker</button></div>`;
+  let h=`<div style="display:flex;justify-content:flex-end;margin-bottom:.75rem"><button class="primary sm" onclick="openUM()">+ Gebruiker</button></div>`;
   h+=`<div class="card">`;
   if(!profielen.length) h+=`<div class="empty">Geen gebruikers.</div>`;
   profielen.forEach(u=>{
@@ -500,9 +500,9 @@ function renderGebruikers(){
         </div>
       </div>
       ${isRA?`<div style="background:var(--bg);border-radius:var(--rs);padding:10px 12px">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Regio toegang</div>
+        <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Regio toegang</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
-          ${regios.map(r=>{const has=uAR.includes(r.id);return `<button class="sm${has?' teal':''}" onclick="toggleAdminRegio(&quot;${u.id}&quot;,${r.id},${has})">${r.naam}</button>`;}).join('')}
+          ${regios.map(r=>{const has=uAR.includes(r.id);return `<button class="sm${has?' primary':''}" onclick="toggleAdminRegio(&quot;${u.id}&quot;,${r.id},${has})">${r.naam}</button>`;}).join('')}
         </div>
       </div>`:''}
     </div>`;
@@ -512,7 +512,7 @@ function renderGebruikers(){
 }
 
 function renderRegios(){
-  let h=`<div style="display:flex;justify-content:flex-end;margin-bottom:.75rem"><button class="teal sm" onclick="openRM()">+ Regio</button></div>`;
+  let h=`<div style="display:flex;justify-content:flex-end;margin-bottom:.75rem"><button class="primary sm" onclick="openRM()">+ Regio</button></div>`;
   h+=`<div class="card">`;
   if(!regios.length) h+=`<div class="empty">Geen regio's.</div>`;
   regios.forEach(r=>{
@@ -525,7 +525,7 @@ function renderRegios(){
 }
 
 function renderTargets(){
-  let h=`<div style="display:flex;justify-content:flex-end;margin-bottom:.75rem"><button class="teal sm" onclick="openTM()">+ Target</button></div>`;
+  let h=`<div style="display:flex;justify-content:flex-end;margin-bottom:.75rem"><button class="primary sm" onclick="openTM()">+ Target</button></div>`;
   
   if(regios.length){
     regios.forEach(r=>{
@@ -534,12 +534,12 @@ function renderTargets(){
       if(!rt.length&&!ru.length) return;
       h+=`<div class="section-label">${r.naam}</div><div class="card">`;
       if(rt.length) rt.forEach(t=>h+=targetRow(t,'regio',r.naam));
-      else h+=`<div style="padding:10px 16px;font-size:12px;color:var(--muted)">Geen regio-target · <button class="sm teal" onclick="openTMregio(${r.id})">+ Toevoegen</button></div>`;
+      else h+=`<div style="padding:10px 16px;font-size:12px;color:var(--text2)">Geen regio-target · <button class="sm primary" onclick="openTMregio(${r.id})">+ Toevoegen</button></div>`;
       ru.forEach(u=>{
         // Only show most recent target per user per periode
         const ut=targets.filter(t=>t.type==='persoon'&&t.user_id===u.id).sort((a,b)=>b.periode.localeCompare(a.periode));
         if(ut.length) ut.slice(0,1).forEach(t=>h+=targetRow(t,'persoon',u.naam||u.email));
-        else h+=`<div style="padding:8px 16px;font-size:12px;color:var(--muted)">↳ ${u.naam||u.email}: geen target</div>`;
+        else h+=`<div style="padding:8px 16px;font-size:12px;color:var(--text2)">↳ ${u.naam||u.email}: geen target</div>`;
       });
       h+=`</div>`;
     });

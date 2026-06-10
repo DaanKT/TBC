@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <link rel="manifest" href="manifest.json"/>
 <script>try{localStorage.setItem('tbc_theme','dark');document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -274,6 +275,7 @@ select option{background:var(--surface2);color:var(--text)}
 <script>
 const SB='https://bstpobqvodljhpjzgnkp.supabase.co';
 const AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
+const _sb=supabase.createClient(SB,AK);
 function getSession(){try{return JSON.parse(localStorage.getItem('tbc_session'));}catch(e){return null;}}
 function getMe(){try{return JSON.parse(localStorage.getItem('tbc_me'));}catch(e){return null;}}
 function logout(){localStorage.removeItem('tbc_session');localStorage.removeItem('tbc_me');location.href='login.html';}
@@ -404,24 +406,10 @@ function insertMention(naam){
   input.focus();
 }
 
-// Realtime subscription
 function setupRealtime(){
-  try{
-    const s=getSession();
-    const ws=new WebSocket(`wss://bstpobqvodljhpjzgnkp.supabase.co/realtime/v1/websocket?apikey=${AK}&vsn=1.0.0`);
-    ws.onopen=()=>{
-      ws.send(JSON.stringify({topic:'realtime:public:feed_berichten',event:'phx_join',payload:{},ref:null}));
-    };
-    ws.onmessage=(e)=>{
-      const msg=JSON.parse(e.data);
-      if(msg.event==='INSERT'){loadFeed();}
-    };
-    ws.onerror=()=>{setTimeout(setupRealtime,5000);}; // herverbinden bij error
-    ws.onclose=()=>{setTimeout(setupRealtime,5000);};
-  }catch(e){
-    // Realtime niet beschikbaar, poll elke 15 seconden
-    setInterval(loadFeed,15000);
-  }
+  _sb.channel('feed-berichten')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'feed_berichten'},()=>loadFeed())
+    .subscribe();
 }
 
 // Enter to send

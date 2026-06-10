@@ -544,7 +544,19 @@ async function sendDM(){
   try{
     await api('POST','/rest/v1/direct_messages',{sender_id:me.id,receiver_id:dmPeer.id,message:tekst});
     await loadDMMessages();
+    sendDMNotification(dmPeer.id,tekst);
   }catch(e){toast('Fout: '+e.message,'err');}
+}
+
+function sendDMNotification(receiverId,message){
+  const s=getSession();
+  if(!s?.access_token)return;
+  const preview=message.length>50?message.slice(0,50)+'…':message;
+  fetch(SB+'/functions/v1/send-notification',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token},
+    body:JSON.stringify({type:'dm',userId:receiverId,data:{title:'💬 '+(me.naam||me.email),message:preview}})
+  }).catch(()=>{});
 }
 
 /* ── REALTIME ─────────────────────────────────────────────── */
@@ -577,6 +589,9 @@ document.getElementById('dm-input').addEventListener('keydown',e=>{
 async function init(){
   me=await checkAuth();if(!me)return;
   document.getElementById('topbar-user').textContent=me.naam||me.email;
+  // Authenticeer de Realtime-verbinding met het user-JWT zodat RLS werkt
+  const _s=getSession();
+  if(_s?.access_token)_sb.realtime.setAuth(_s.access_token);
   profielen=await api('GET','/rest/v1/profielen')||[];
   await loadFeed();
   setupRealtime();

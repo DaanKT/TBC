@@ -1,7 +1,6 @@
 // TBC Sales Platform — Service Worker
-// Zet dit bestand als "sw.js" in de ROOT van je GitHub repo
 
-const CACHE_NAME = 'tbc-sales-v1';
+const CACHE_NAME = 'tbc-sales-v3';
 const OFFLINE_FILES = ['/', '/dashboard.html', '/login.html', '/icon.svg'];
 
 // ── INSTALL ─────────────────────────────────────────────────
@@ -24,12 +23,37 @@ self.addEventListener('activate', e => {
   );
 });
 
-// ── FETCH (cache-first voor static assets) ──────────────────
+// ── FETCH ────────────────────────────────────────────────────
+// HTML: network-first — altijd vers ophalen, cache alleen als fallback offline
+// Overig: cache-first — statische assets zelden gewijzigd
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+
+  const url = new URL(e.request.url);
+  const isHTML = url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname === '';
+
+  if (isHTML) {
+    e.respondWith(
+      fetch(e.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
   e.respondWith(
-    caches.match(e.request)
-      .then(cached => cached || fetch(e.request))
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(response => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        return response;
+      });
+    })
   );
 });
 

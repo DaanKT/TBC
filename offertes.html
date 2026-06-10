@@ -482,7 +482,6 @@ async function saveOfferte(){
       toast(pdfUploadFailed?'Bijgewerkt — PDF upload mislukt (bucket niet gevonden).':'Offerte bijgewerkt.',pdfUploadFailed?'err':'ok');
     } else {
       body.user_id=me.id;
-      body.regio_id=me.regio_id||null;
       await api('POST','/rest/v1/offertes',body);
       toast(pdfUploadFailed?'Offerte opgeslagen — PDF upload mislukt (bucket niet gevonden).':'Offerte toegevoegd! ✅',pdfUploadFailed?'err':'ok');
     }

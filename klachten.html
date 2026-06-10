@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="icon.svg"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <link rel="manifest" href="manifest.json"/>
-<script>try{var t=localStorage.getItem('tbc_theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<script>try{localStorage.setItem('tbc_theme','dark');document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -63,7 +63,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .topbar-user{font-size:12px;color:rgba(255,255,255,.4)}
 .btn-lo{font-family:'DM Sans',sans-serif;background:none;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.5);font-size:12px;padding:4px 10px;border-radius:var(--rs);cursor:pointer}
 .btn-lo:hover{color:#fff}
-.btn-th{background:none;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.6);font-size:15px;width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
 /* SIDEBAR */
 .sidebar{display:none;position:fixed;left:0;top:52px;bottom:0;width:210px;background:var(--navy);border-right:1px solid rgba(255,255,255,.06);flex-direction:column;padding:12px 10px;gap:2px;overflow-y:auto;z-index:50}
 .sidebar::-webkit-scrollbar{display:none}
@@ -210,7 +209,6 @@ select option{background:var(--surface2);color:var(--text)}
   <div class="topbar-right">
     <span class="topbar-user" id="topbar-user"></span>
     <div id="tbr" style="display:flex;gap:6px"></div>
-    <button class="btn-th" id="btn-th" onclick="toggleTheme()">☀️</button>
     <button class="btn-lo" onclick="logout()">↩</button>
   </div>
 </header>
@@ -265,15 +263,6 @@ function esc(s){return String(s).replace(/'/g,"&apos;");}
 function toast(msg,tp){const el=document.createElement('div');el.className='toast'+(tp?' '+tp:'');el.textContent=msg;const tw=document.getElementById('tw');tw.appendChild(el);setTimeout(()=>el.remove(),3500);}
 function isAdmin(me){return me?.rol==='admin';}
 function isRA(me){return me?.rol==='admin'||me?.rol==='regio_admin';}
-function toggleTheme(){
-  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
-  document.documentElement.setAttribute('data-theme',t);
-  localStorage.setItem('tbc_theme',t);
-  const btn=document.getElementById('btn-th');
-  if(btn)btn.textContent=t==='dark'?'\u2600\uFE0F':'\uD83C\uDF19';
-}
-// Init theme button icon
-(function(){const t=localStorage.getItem('tbc_theme')||'dark';const btn=document.getElementById('btn-th');if(btn)btn.textContent=t==='dark'?'\u2600\uFE0F':'\uD83C\uDF19';})();
 async function refreshSess(){
   const s=getSess();if(!s?.refresh_token)return null;
   try{

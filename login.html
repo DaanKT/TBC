@@ -7,7 +7,7 @@
 <link rel="apple-touch-icon" href="icon.svg"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <link rel="manifest" href="manifest.json"/>
-<script>try{var t=localStorage.getItem('tbc_theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<script>try{localStorage.setItem('tbc_theme','dark');document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
 <style>
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -63,7 +63,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .topbar-user{font-size:12px;color:rgba(255,255,255,.4)}
 .btn-lo{font-family:'DM Sans',sans-serif;background:none;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.5);font-size:12px;padding:4px 10px;border-radius:var(--rs);cursor:pointer}
 .btn-lo:hover{color:#fff}
-.btn-th{background:none;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.6);font-size:15px;width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
 /* SIDEBAR */
 .sidebar{display:none;position:fixed;left:0;top:52px;bottom:0;width:210px;background:var(--navy);border-right:1px solid rgba(255,255,255,.06);flex-direction:column;padding:12px 10px;gap:2px;overflow-y:auto;z-index:50}
 .sidebar::-webkit-scrollbar{display:none}
@@ -207,14 +206,12 @@ body{display:flex;flex-direction:column;min-height:100vh;align-items:center;just
 .login-card{width:100%;max-width:380px;padding:32px 28px;margin:0 1rem;background:var(--surface);border:1px solid var(--border2);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .login-logo{font-size:16px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.06em;text-align:center;margin-bottom:4px}
 .login-logo span{color:var(--teal)}
-.corner-theme{position:fixed;top:16px;right:16px;width:36px;height:36px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px}
 .pw-wrap{position:relative}
 .pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:4px}
 .err{background:var(--redfade);border:1px solid rgba(240,79,94,.25);color:var(--red);font-size:13px;padding:10px 14px;border-radius:var(--rs);margin-bottom:12px;display:none}
 </style>
 </head>
 <body>
-<button class="corner-theme" id="btn-th" onclick="toggleTheme()">☀️</button>
 <div class="login-card">
   <div class="login-logo">The Branding <span>Club</span></div>
   <div style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:24px">Sales Platform</div>
@@ -231,8 +228,6 @@ body{display:flex;flex-direction:column;min-height:100vh;align-items:center;just
 <script>
 const SB='https://bstpobqvodljhpjzgnkp.supabase.co';
 const AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
-function toggleTheme(){const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('tbc_theme',t);document.getElementById('btn-th').textContent=t==='dark'?'☀️':'🌙';}
-(function(){const t=localStorage.getItem('tbc_theme')||'dark';document.getElementById('btn-th').textContent=t==='dark'?'☀️':'🌙';})();
 async function doLogin(){
   const email=document.getElementById('email').value.trim();
   const pw=document.getElementById('ww').value;

@@ -1,6 +1,6 @@
 // TBC Sales Platform — Service Worker
 
-const CACHE_NAME = 'tbc-sales-v3';
+const CACHE_NAME = 'tbc-sales-v4';
 const OFFLINE_FILES = ['/', '/dashboard.html', '/login.html', '/icon.svg'];
 
 // ── INSTALL ─────────────────────────────────────────────────

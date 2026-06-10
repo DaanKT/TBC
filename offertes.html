@@ -458,8 +458,10 @@ async function saveOfferte(){
     const nummer=document.getElementById('om-nummer').value.trim();
     let pdfUrl=null;
 
+    let pdfUploadFailed=false;
     if(pdfFile){
       pdfUrl=await uploadPDF(pdfFile, nummer||bedrijf.replace(/\s+/g,'-').toLowerCase());
+      if(!pdfUrl) pdfUploadFailed=true;
     }
 
     const body={
@@ -479,12 +481,12 @@ async function saveOfferte(){
     const id=document.getElementById('om-id').value;
     if(id){
       await api('PATCH','/rest/v1/offertes?id=eq.'+id,body);
-      toast('Offerte bijgewerkt.','ok');
+      toast(pdfUploadFailed?'Bijgewerkt — PDF upload mislukt (bucket niet gevonden).':'Offerte bijgewerkt.',pdfUploadFailed?'err':'ok');
     } else {
       body.user_id=me.id;
       body.regio_id=me.regio_id||null;
       await api('POST','/rest/v1/offertes',body);
-      toast('Offerte toegevoegd! ✅','ok');
+      toast(pdfUploadFailed?'Offerte opgeslagen — PDF upload mislukt (bucket niet gevonden).':'Offerte toegevoegd! ✅',pdfUploadFailed?'err':'ok');
     }
 
     document.getElementById('ov-offerte').classList.remove('open');

@@ -240,6 +240,32 @@ select option{background:var(--surface2);color:var(--text)}
 .mention-item:hover{background:var(--surface2)}
 .mention-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:rgba(79,209,165,.25);color:var(--teal)}
 .mention{background:rgba(79,209,165,.15);color:var(--teal);border-radius:4px;padding:1px 4px;font-weight:600}
+/* TABS */
+.feed-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+.feed-tab{flex:1;padding:11px 8px;font-size:13px;font-weight:600;color:var(--text2);border:none;border-bottom:2px solid transparent;background:none;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px}
+.feed-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.feed-tab:hover:not(.active){color:var(--text)}
+.dm-tab-badge{background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;display:none}
+.dm-tab-badge.vis{display:inline-block}
+/* PANELS */
+.panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.panel.hidden{display:none!important}
+/* DM LIST */
+.dm-list{flex:1;overflow-y:auto;padding:.5rem}
+.dm-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:var(--r);cursor:pointer;transition:background .1s}
+.dm-item:hover{background:var(--surface2)}
+.dm-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.dm-item-name{font-size:14px;font-weight:600}
+.dm-item-sub{font-size:12px;color:var(--text2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+/* DM CHAT */
+.dm-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+.dm-back{background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;line-height:1;padding:2px 4px;display:flex;align-items:center;border-radius:var(--rs)}
+.dm-back:hover{background:var(--surface2)}
+.dm-header-name{font-size:14px;font-weight:700}
+.dm-messages{flex:1;overflow-y:auto;padding:.875rem 1rem;display:flex;flex-direction:column;gap:4px}
+.dm-messages::-webkit-scrollbar{width:4px}
+.dm-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+.dm-input-wrap{display:flex;gap:8px;align-items:flex-end;padding:10px 14px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
 </style>
 </head>
 <body>
@@ -257,14 +283,42 @@ select option{background:var(--surface2);color:var(--text)}
 </nav>
 <div class="tw" id="tw"></div>
 <div class="content">
-  <div class="feed-messages" id="feed-messages">
-    <div style="text-align:center;padding:2rem;color:var(--text3)"><span class="ld dk"></span><br><br>Feed laden...</div>
+  <!-- Tab-balk -->
+  <div class="feed-tabs">
+    <button class="feed-tab active" id="tab-feed" onclick="switchTab('feed')">💬 Feed</button>
+    <button class="feed-tab" id="tab-dm" onclick="switchTab('dm')">✉️ Berichten <span class="dm-tab-badge" id="dm-badge"></span></button>
   </div>
-  <div style="position:relative">
-    <div class="mentions-popup" id="mentions-popup"></div>
-    <div class="input-area">
-      <textarea class="input-box" id="msg-input" placeholder="Stuur een bericht... Typ @ om iemand te taggen" rows="1" oninput="autoResize(this);checkMention(this)"></textarea>
-      <button class="send-btn" onclick="sendMessage()">➤</button>
+
+  <!-- Groepsfeed panel -->
+  <div class="panel" id="panel-feed">
+    <div class="feed-messages" id="feed-messages">
+      <div style="text-align:center;padding:2rem;color:var(--text3)"><span class="ld"></span><br><br>Feed laden...</div>
+    </div>
+    <div style="position:relative">
+      <div class="mentions-popup" id="mentions-popup"></div>
+      <div class="input-area">
+        <textarea class="input-box" id="msg-input" placeholder="Stuur een bericht... Typ @ om iemand te taggen" rows="1" oninput="autoResize(this);checkMention(this)"></textarea>
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DM panel: lijst -->
+  <div class="panel hidden" id="panel-dm">
+    <div class="panel" id="dm-list-panel">
+      <div class="dm-list" id="dm-list"></div>
+    </div>
+    <!-- DM panel: gesprek -->
+    <div class="panel hidden" id="dm-chat-panel">
+      <div class="dm-header">
+        <button class="dm-back" onclick="closeDMChat()">←</button>
+        <div class="dm-header-name" id="dm-peer-name"></div>
+      </div>
+      <div class="dm-messages" id="dm-messages"></div>
+      <div class="dm-input-wrap">
+        <textarea class="input-box" id="dm-input" placeholder="Stuur een privébericht..." rows="1" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" onclick="sendDM()">➤</button>
+      </div>
     </div>
   </div>
 </div>
@@ -286,6 +340,9 @@ function fdt(d){return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',mon
 function ftm(d){return new Date(d).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
 
 let me=null, profielen=[], berichtenCache=[];
+let activeTab='feed', dmPeer=null, dmUnread=0;
+const AV_COLORS=['av-da','av-se','av-mi'];
+function avCls(idx){return AV_COLORS[Math.abs(idx)%AV_COLORS.length];}
 const avatarColors={'da':'av-da','se':'av-se','mi':'av-mi'};
 
 async function checkAuth(){
@@ -406,15 +463,115 @@ function insertMention(naam){
   input.focus();
 }
 
+/* ── TAB SWITCHING ───────────────────────────────────────── */
+function switchTab(tab){
+  activeTab=tab;
+  document.getElementById('panel-feed').classList.toggle('hidden',tab!=='feed');
+  document.getElementById('panel-dm').classList.toggle('hidden',tab!=='dm');
+  document.getElementById('tab-feed').classList.toggle('active',tab==='feed');
+  document.getElementById('tab-dm').classList.toggle('active',tab==='dm');
+  if(tab==='dm'){dmUnread=0;updateDMBadge();if(!dmPeer)renderDMList();}
+}
+function updateDMBadge(){
+  const el=document.getElementById('dm-badge');
+  el.textContent=dmUnread||'';
+  el.classList.toggle('vis',dmUnread>0);
+}
+
+/* ── DM LIJST ────────────────────────────────────────────── */
+function renderDMList(){
+  const el=document.getElementById('dm-list');
+  const peers=profielen.filter(p=>p.id!==me.id);
+  if(!peers.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text3);font-size:14px">Geen collega\'s gevonden.</div>';return;}
+  el.innerHTML=peers.map((p,i)=>`
+    <div class="dm-item" onclick="openDMChat('${p.id}')">
+      <div class="dm-av ${avCls(i)}">${(p.naam||'?').slice(0,2).toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div class="dm-item-name">${p.naam||p.email}</div>
+        ${p.regio_id?`<div class="dm-item-sub">${p.email||''}</div>`:''}
+      </div>
+      <span style="font-size:18px;color:var(--text3)">›</span>
+    </div>`).join('');
+}
+
+/* ── DM GESPREK ──────────────────────────────────────────── */
+async function openDMChat(peerId){
+  dmPeer=profielen.find(p=>p.id===peerId);
+  if(!dmPeer)return;
+  document.getElementById('dm-list-panel').classList.add('hidden');
+  document.getElementById('dm-chat-panel').classList.remove('hidden');
+  document.getElementById('dm-peer-name').textContent=dmPeer.naam||dmPeer.email;
+  await loadDMMessages();
+}
+
+function closeDMChat(){
+  dmPeer=null;
+  document.getElementById('dm-chat-panel').classList.add('hidden');
+  document.getElementById('dm-list-panel').classList.remove('hidden');
+}
+
+async function loadDMMessages(){
+  if(!dmPeer)return;
+  const filter=`or=(and(sender_id.eq.${me.id},receiver_id.eq.${dmPeer.id}),and(sender_id.eq.${dmPeer.id},receiver_id.eq.${me.id}))`;
+  const msgs=await api('GET',`/rest/v1/direct_messages?${filter}&order=created_at.asc&limit=100`)||[];
+  renderDMMessages(msgs);
+}
+
+function renderDMMessages(msgs){
+  const el=document.getElementById('dm-messages');
+  if(!msgs.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px">Stuur het eerste bericht! 👋</div>';return;}
+  let html='',lastDate='';
+  msgs.forEach(m=>{
+    const d=fdt(m.created_at);
+    if(d!==lastDate){html+=`<div class="date-divider"><span>${d}</span></div>`;lastDate=d;}
+    const own=m.sender_id===me.id;
+    html+=`<div class="msg-group${own?' own':''}">
+      <div class="bubble">
+        <div class="bubble-text">${m.message.replace(/</g,'&lt;')}</div>
+        <div class="bubble-time">${ftm(m.created_at)}</div>
+      </div>
+    </div>`;
+  });
+  el.innerHTML=html;
+  el.scrollTop=el.scrollHeight;
+}
+
+async function sendDM(){
+  const input=document.getElementById('dm-input');
+  const tekst=input.value.trim();
+  if(!tekst||!dmPeer)return;
+  input.value='';input.style.height='auto';
+  try{
+    await api('POST','/rest/v1/direct_messages',{sender_id:me.id,receiver_id:dmPeer.id,message:tekst});
+    await loadDMMessages();
+  }catch(e){toast('Fout: '+e.message,'err');}
+}
+
+/* ── REALTIME ─────────────────────────────────────────────── */
 function setupRealtime(){
   _sb.channel('feed-berichten')
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'feed_berichten'},()=>loadFeed())
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'feed_berichten'},()=>{
+      if(activeTab==='feed')loadFeed();
+    })
+    .subscribe();
+
+  _sb.channel('direct-messages-in')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages',filter:`receiver_id=eq.${me.id}`},(payload)=>{
+      if(activeTab==='dm'&&dmPeer&&dmPeer.id===payload.new.sender_id){
+        loadDMMessages();
+      } else {
+        dmUnread++;
+        updateDMBadge();
+      }
+    })
     .subscribe();
 }
 
-// Enter to send
 document.getElementById('msg-input').addEventListener('keydown',e=>{
   if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+});
+document.getElementById('dm-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendDM();}
 });
 
 async function init(){

@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <link rel="manifest" href="manifest.json"/>
 <script>try{localStorage.setItem('tbc_theme','dark');document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -297,6 +298,7 @@ textarea.ci-in{resize:none;min-height:70px;line-height:1.5;font-size:13px}
 <script>
 
 const SB='https://bstpobqvodljhpjzgnkp.supabase.co',AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI',SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDUzMTI4MCwiZXhwIjoyMDk2MTA3MjgwfQ.2Nrgk7-TxZ-gIAFYhjcfNTFdm6g-6HaGIu3QGCEckPs',VAPID='BKlArr217ipuIIeyfgt1lpB2M7M7iak9OHlLZMhXPxW1jhHrvrm78Ap7mHyPOJ2oV96LwrO3nKvisl4-wxxbzew';
+const _sb=supabase.createClient(SB,AK);
 function gs(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}
 function ss(k,v){localStorage.setItem(k,JSON.stringify(v));}
 function getSess(){return gs('tbc_session');}
@@ -397,6 +399,7 @@ async function init() {
     await loadAll();
     if (isRA(me)) renderAdmin(); else renderMed();
     registerSW();
+    setupDashboardRealtime();
   } catch(e) {
     document.getElementById('content').innerHTML = '<div class="empty">Fout bij laden: ' + e.message + '<br><br><button onclick="init()">Opnieuw proberen</button></div>';
   }
@@ -809,6 +812,17 @@ async function saveNM() {
 // PUSH
 function u8(b){const p='='.repeat((4-b.length%4)%4);const base64=(b+p).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(base64);const out=new Uint8Array(raw.length);for(let i=0;i<raw.length;++i)out[i]=raw.charCodeAt(i);return out;}
 async function registerSW(){if('serviceWorker'in navigator)try{await navigator.serviceWorker.register('/sw.js');}catch{}}
+let _dashReloadTimer=null;
+function setupDashboardRealtime(){
+  const scheduleReload=()=>{
+    clearTimeout(_dashReloadTimer);
+    _dashReloadTimer=setTimeout(async()=>{await loadAll();isRA(me)?renderAdmin():renderMed();},800);
+  };
+  _sb.channel('dashboard-live')
+    .on('postgres_changes',{event:'*',schema:'public',table:'commitments'},scheduleReload)
+    .on('postgres_changes',{event:'*',schema:'public',table:'dagrapporten'},scheduleReload)
+    .subscribe();
+}
 async function reqPush(){
   if(location.protocol!=='https:'){toast('Push werkt alleen via HTTPS.','err');return;}
   const reg=await navigator.serviceWorker.getRegistration('/sw.js');

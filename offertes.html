@@ -267,10 +267,12 @@ button.teal:hover{opacity:.9}
 </div>
 </div></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 const SB='https://bstpobqvodljhpjzgnkp.supabase.co';
 const AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDUzMTI4MCwiZXhwIjoyMDk2MTA3MjgwfQ.2Nrgk7-TxZ-gIAFYhjcfNTFdm6g-6HaGIu3QGCEckPs';
+const _sb=supabase.createClient(SB,AK);
 
 function getSession(){try{return JSON.parse(localStorage.getItem('tbc_session'));}catch(e){return null;}}
 function getMe(){try{return JSON.parse(localStorage.getItem('tbc_me'));}catch(e){return null;}}
@@ -297,11 +299,17 @@ async function checkAuth(){
   }catch(e){localStorage.clear();location.replace('login.html');return null;}
 }
 
+function setupRealtime(){
+  const s=getSession();if(!s?.access_token)return;
+  _sb.realtime.setAuth(s.access_token);
+  _sb.channel('rt-offertes').on('postgres_changes',{event:'*',schema:'public',table:'offertes'},()=>{loadData().then(render);}).subscribe();
+}
 async function init(){
   me=await checkAuth();if(!me)return;
   document.getElementById('topbar-user').textContent=me.naam||me.email;
   await loadData();
   render();
+  setupRealtime();
 }
 
 async function loadData(){
@@ -380,7 +388,7 @@ function render(){
           <div style="display:flex;gap:6px;align-items:center">
             ${o.volgende_actie?`<span style="font-size:11px;color:${actieLaat?'var(--amber)':'var(--muted)'}">📅 ${fdt(o.volgende_actie)}</span>`:''}
             ${o.pdf_url?`<button class="sm" onclick="window.open('${o.pdf_url}','_blank')" style="font-size:11px;padding:3px 8px">📄 PDF</button>`:''}
-            <button class="sm" onclick="openModal(${o.id})" style="font-size:11px;padding:3px 8px">✏️ Bewerk</button>
+            <button class="sm" onclick="openModal('${o.id}')" style="font-size:11px;padding:3px 8px">✏️ Bewerk</button>
           </div>
         </div>
         ${o.notitie?`<div style="margin-top:8px;font-size:12px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);padding-top:8px">💬 ${o.notitie}</div>`:''}

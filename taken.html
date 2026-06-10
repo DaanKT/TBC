@@ -235,9 +235,11 @@ select option{background:var(--surface2);color:var(--text)}
   <button id="tm-del" class="danger sm" style="display:none" onclick="delTaak()">Verwijderen</button>
   <button class="primary" id="btn-tm" onclick="saveTaak()">Opslaan</button>
 </div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 
 const SB='https://bstpobqvodljhpjzgnkp.supabase.co',AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzEyODAsImV4cCI6MjA5NjEwNzI4MH0.zMy3hmD02DSCkVfAOh2URDqXm_WBFCYe8CgNkvWT_yI',SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdHBvYnF2b2RsamhwanpnbmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDUzMTI4MCwiZXhwIjoyMDk2MTA3MjgwfQ.2Nrgk7-TxZ-gIAFYhjcfNTFdm6g-6HaGIu3QGCEckPs',VAPID='BKlArr217ipuIIeyfgt1lpB2M7M7iak9OHlLZMhXPxW1jhHrvrm78Ap7mHyPOJ2oV96LwrO3nKvisl4-wxxbzew';
+const _sb=supabase.createClient(SB,AK);
 function gs(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}
 function ss(k,v){localStorage.setItem(k,JSON.stringify(v));}
 function getSess(){return gs('tbc_session');}
@@ -323,11 +325,17 @@ setTimeout(()=>{if(!localStorage.getItem('tbc_t3'))startTour();},2000);
 
 
 let me=null,taken=[],profielen=[],filter='open',zoek='',editId=null;
+function setupRealtime(){
+  const s=getSess();if(!s?.access_token)return;
+  _sb.realtime.setAuth(s.access_token);
+  _sb.channel('rt-taken').on('postgres_changes',{event:'*',schema:'public',table:'taken'},()=>{loadD().then(render);}).subscribe();
+}
 async function init(){
   me=await checkAuth();if(!me)return;
   document.getElementById('topbar-user').textContent=(me.naam||me.email)+(isAdmin(me)?' (Admin)':'');
   document.getElementById('tbr').innerHTML='<button class="primary sm" onclick="openModal()">+ Nieuwe taak</button>';
   await loadD();render();
+  setupRealtime();
 }
 async function loadD(){
   if(isAdmin(me)){

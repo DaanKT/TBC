@@ -313,6 +313,7 @@ async function api(m,p,b,svc){
   return t?JSON.parse(t):null;
 }
 function v(id){return(document.getElementById(id)?.value||'').trim();}
+function parseBedrag(s){s=String(s||'').trim().replace(/\s/g,'');if(!s)return NaN;if(s.includes(','))return parseFloat(s.replace(/\./g,'').replace(',','.'));if(/^\d{1,3}(\.\d{3})+$/.test(s))return parseFloat(s.replace(/\./g,''));return parseFloat(s);}
 function eur(n){return'\u20ac'+Number(n||0).toLocaleString('nl-NL',{minimumFractionDigits:0,maximumFractionDigits:0});}
 function fdt(d){return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',month:'short',year:'numeric'});}
 function fdts(d){return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',month:'short'});}
@@ -591,11 +592,11 @@ function renderMed() {
     </div>
     <div style="margin-bottom:10px">
       <span class="ci-lbl">Productie intake vandaag (€)</span>
-      <input class="ci-in" type="number" id="ci-pv" value="${todayD?todayD.productie_vandaag:''}" placeholder="0" min="0" step="100"/>
+      <input class="ci-in" type="text" inputmode="decimal" id="ci-pv" value="${todayD?todayD.productie_vandaag:''}" placeholder="0"/>
     </div>
     <div style="margin-bottom:12px;background:var(--tealfade);border-radius:var(--rs);padding:12px;border:1px solid rgba(79,209,165,.2)">
       <span class="ci-lbl" style="color:var(--teal)">🎯 Commit voor morgen (€) <span style="color:var(--red)">*</span></span>
-      <input class="ci-in" type="number" id="ci-cm" value="${todayD?todayD.commit_morgen:''}" placeholder="Verplicht!" min="0" step="100" style="border-color:rgba(79,209,165,.4);background:var(--surface3)"/>
+      <input class="ci-in" type="text" inputmode="decimal" id="ci-cm" value="${todayD?todayD.commit_morgen:''}" placeholder="Verplicht!" style="border-color:rgba(79,209,165,.4);background:var(--surface3)"/>
       <div style="font-size:11px;color:var(--text3);margin-top:4px">Verplicht — je kunt niet inchecken zonder commit voor morgen.</div>
     </div>
     <div style="margin-bottom:10px">
@@ -619,8 +620,8 @@ function selH(val) {
 }
 
 async function saveCI(verplicht) {
-  const pv = parseFloat(document.getElementById('ci-pv').value)||0;
-  const cm = parseFloat(document.getElementById('ci-cm').value)||0;
+  const pv = parseBedrag(document.getElementById('ci-pv').value)||0;
+  const cm = parseBedrag(document.getElementById('ci-cm').value)||0;
   const n = document.getElementById('ci-n').value.trim();
   const top3 = document.getElementById('ci-top3').value.trim();
   if (!cm || cm <= 0) { toast('Commit voor morgen is verplicht — vul een bedrag in.','err'); document.getElementById('ci-cm').focus(); return; }
@@ -754,35 +755,35 @@ async function quickBev(id) {
   try { await api('PATCH','/rest/v1/commitments?id=eq.'+id,{bevestigd:true,omzet_actuals:c.omzet_forecast,gehaald:true}); try{await api('POST','/rest/v1/feed_berichten',{user_id:me.id,bericht:`🏆 ${me.naam} heeft zijn commit gehaald! ${eur(c.omzet_forecast)} 🎉`,type:'deal'});}catch{} await loadAll(); renderMed(); toast('Top! 🎉','ok'); } catch(e) { toast('Fout: '+e.message,'err'); }
 }
 async function saveBev() {
-  const o=parseFloat(v('bv-o')); if(isNaN(o))return toast('Vul omzet in.');
+  const o=parseBedrag(v('bv-o')); if(isNaN(o))return toast('Vul omzet in.');
   const c=commits.find(x=>x.id===bevId); document.getElementById('btn-bv-s').disabled=true;
   try { await api('PATCH','/rest/v1/commitments?id=eq.'+bevId,{bevestigd:true,omzet_actuals:o,gehaald:o>=(c?.omzet_forecast||0)}); document.getElementById('ov-bev').classList.remove('open'); await loadAll(); renderMed(); toast(o>=(c?.omzet_forecast||0)?'Target gehaald! 🎉':'Bevestigd.','ok'); } catch(e){toast('Fout: '+e.message,'err');}finally{document.getElementById('btn-bv-s').disabled=false;}
 }
 
 function openAC(uid,naam) { acUID=uid; const tom=new Date(); tom.setDate(tom.getDate()+1); document.getElementById('ac-naam').textContent=naam; document.getElementById('ac-d').value=tom.toISOString().slice(0,10); document.getElementById('ac-o').value=''; document.getElementById('ov-ac').classList.add('open'); }
 async function saveAC() {
-  const d=v('ac-d'),o=parseFloat(v('ac-o')); if(!d||isNaN(o))return toast('Vul datum en omzet in.');
+  const d=v('ac-d'),o=parseBedrag(v('ac-o')); if(!d||isNaN(o))return toast('Vul datum en omzet in.');
   document.getElementById('btn-ac-s').disabled=true;
   try { const u=profielen.find(x=>x.id===acUID)||me; await api('POST','/rest/v1/commitments',{user_id:acUID,regio_id:u.regio_id||null,datum:d,omzet_forecast:o}); document.getElementById('ov-ac').classList.remove('open'); await loadAll(); renderAdmin(); toast('Commit aangemaakt.','ok'); } catch(e){toast('Fout: '+e.message,'err');}finally{document.getElementById('btn-ac-s').disabled=false;}
 }
 
 function openTE(uid,naam,huidig,tid) { teUID=uid; document.getElementById('te-naam').textContent=naam; document.getElementById('te-o').value=huidig||''; document.getElementById('te-p').value=nowM(); document.getElementById('te-id').value=tid||''; document.getElementById('ov-te').classList.add('open'); }
 async function saveTE() {
-  const o=parseFloat(v('te-o')),p=v('te-p'),eid=v('te-id'); if(isNaN(o)||!p)return toast('Vul target in.');
+  const o=parseBedrag(v('te-o')),p=v('te-p'),eid=v('te-id'); if(isNaN(o)||!p)return toast('Vul target in.');
   document.getElementById('btn-te-s').disabled=true;
   try { if(eid)await api('PATCH','/rest/v1/targets?id=eq.'+eid,{omzet_target:o,periode:p}); else await api('POST','/rest/v1/targets',{type:'persoon',user_id:teUID,periode:p,omzet_target:o}); document.getElementById('ov-te').classList.remove('open'); await loadAll(); renderAdmin(); toast('Target opgeslagen.','ok'); } catch(e){toast('Fout: '+e.message,'err');}finally{document.getElementById('btn-te-s').disabled=false;}
 }
 
 function openCR(uid,naam,huidig) { crUID=uid; crN=naam; document.getElementById('cr-n').textContent=naam; document.getElementById('cr-h').textContent=eur(huidig); document.getElementById('cr-b').value=''; document.getElementById('cr-r').value=''; document.getElementById('ov-cr').classList.add('open'); }
 async function saveCR() {
-  const b=parseFloat(v('cr-b')),r=v('cr-r'); if(isNaN(b))return toast('Vul bedrag in.'); if(!r)return toast('Reden verplicht.');
+  const b=parseBedrag(v('cr-b')),r=v('cr-r'); if(isNaN(b))return toast('Vul bedrag in.'); if(!r)return toast('Reden verplicht.');
   document.getElementById('btn-cr-s').disabled=true;
   try { await api('POST','/rest/v1/correcties',{user_id:crUID,admin_id:me.id,bedrag:b,reden:r,datum:nowD()}); document.getElementById('ov-cr').classList.remove('open'); await loadAll(); renderAdmin(); toast('Correctie opgeslagen.','ok'); } catch(e){toast('Fout: '+e.message,'err');}finally{document.getElementById('btn-cr-s').disabled=false;}
 }
 
 function openEC(id,naam,bedrag,datum) { ecId=id; document.getElementById('ec-n').textContent=naam; document.getElementById('ec-o').value=bedrag; document.getElementById('ec-d').value=datum; document.getElementById('ov-ec').classList.add('open'); }
 async function saveEC() {
-  const o=parseFloat(v('ec-o')),d=v('ec-d'); if(isNaN(o))return toast('Vul bedrag in.');
+  const o=parseBedrag(v('ec-o')),d=v('ec-d'); if(isNaN(o))return toast('Vul bedrag in.');
   document.getElementById('btn-ec-s').disabled=true;
   try { await api('PATCH','/rest/v1/commitments?id=eq.'+ecId,{omzet_forecast:o,datum:d}); document.getElementById('ov-ec').classList.remove('open'); await loadAll(); renderAdmin(); toast('Bijgewerkt.','ok'); } catch(e){toast('Fout: '+e.message,'err');}finally{document.getElementById('btn-ec-s').disabled=false;}
 }

@@ -384,7 +384,7 @@ setTimeout(()=>{if(!localStorage.getItem('tbc_t3'))startTour();},2000);
 
 let me=null,regios=[],targets=[],commits=[],dagrapporten=[],profielen=[],correcties=[],adminRegios=[];
 let openMed=null,bevId=null,acUID=null,teUID=null,crUID=null,crN=null,ecId=null;
-let nmT='all',nmId=null,selH=null;
+let nmT='all',nmId=null,selHumeur=null;
 
 async function init() {
   try {
@@ -611,7 +611,7 @@ function renderMed() {
 }
 
 function selH(val) {
-  selH = val;
+  selHumeur = val;
   document.querySelectorAll('.hmr-btn').forEach((b,i)=>b.classList.toggle('on',i+1===val));
 }
 
@@ -625,7 +625,7 @@ async function saveCI(verplicht) {
   const today = nowD();
   const existing = dagrapporten.find(d=>d.user_id===me.id&&d.datum===today);
   try {
-    const body = {productie_vandaag:pv,commit_morgen:cm,notitie:n||null,top3_acties:top3||null,humeur:selH||null,user_id:me.id,datum:today};
+    const body = {productie_vandaag:pv,commit_morgen:cm,notitie:n||null,top3_acties:top3||null,humeur:selHumeur||null,user_id:me.id,datum:today};
     if (existing) await api('PATCH','/rest/v1/dagrapporten?id=eq.'+existing.id,body);
     else await api('POST','/rest/v1/dagrapporten',body);
     const nextDay = getNextWorkday(today);
